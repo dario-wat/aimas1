@@ -27,6 +27,15 @@ public abstract class AbstractVehicle : MonoBehaviour {
 	// Threshold for the distance to the goal
 	protected const float DIST_THRESHOLD = 0.01f;
 
+	// Threshold for angle when it's precise enough to go straight
+	protected const float TURN_THRESHOLD = 0.01f;
+
+	// Multiply to convert to radians
+	protected const float toRad = PI / 180.0f;
+
+	// Multiply to convert to degrees
+	protected const float toDeg = 180.0f / PI;
+
 	// PathGenerator object instance
 	protected PathGenerator pg = PathGenerator.instance;
 

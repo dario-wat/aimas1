@@ -11,11 +11,11 @@ public class PathGenerator {
 
 	// Use this for initialization
 	private void Init () {
-		points.Add(new Vector3(3, 0, 3));
-		points.Add(new Vector3(10, 0, 3));
-		points.Add(new Vector3(10, 0, 10));
-		points.Add(new Vector3(-2, 0, 5));
-		points.Add(new Vector3(6, 0, 0));
+		points.Add(new Vector3(7, 0, 7));
+		points.Add(new Vector3(20, 0, 7));
+		points.Add(new Vector3(13, 0, -3));
+		points.Add(new Vector3(-1, 0, -15));
+		points.Add(new Vector3(-16, 0, 2));
 	}
 
 

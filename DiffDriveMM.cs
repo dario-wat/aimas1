@@ -19,9 +19,6 @@ public class DiffDriveMM : AbstractVehicle {
 	// Max angular velocity
 	public float maxOmega = 50.0f;
 
-	// Threshold for angle when it's precise enough to go straight
-	private const float TURN_THRESHOLD = 0.01f;
-
 
 	// Use this for initialization
 	override protected void Start () {
@@ -60,7 +57,7 @@ public class DiffDriveMM : AbstractVehicle {
 			// Finally rotate the vehicle
 			transform.RotateAround(transform.position, Yaxis, rotate);
 			// Set speed to the outside world so it can be visible, per second
-			omega = Math.Abs(rotate) / dt;
+			omega = rotate / dt;
 			theta = transform.eulerAngles.y;	// Set public variable
 		} else {
 			/**** Translation part ***/
