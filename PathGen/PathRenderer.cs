@@ -14,7 +14,7 @@ public class PathRenderer : MonoBehaviour, IPathListener {
 	private GameObject parentObject;
 
 	// PathGenerator object that is used to render the path
-	private PathGenerator pg = PathGenerator.instance;
+	private PathGenerator pg;
 
 	// Use this for initialization
 	void Start () {
@@ -24,6 +24,7 @@ public class PathRenderer : MonoBehaviour, IPathListener {
 		}
 		
 		// Register itself as observer
+		pg = PathGenerator.instance;
 		pg.Attach(this);
 
 		// Create parent

@@ -9,14 +9,26 @@ public class PathGenerator {
 	public readonly List<Vector3> points = new List<Vector3>();
 
 
-	// Use this for initialization
-	private void Init () {
-		points.Add(new Vector3(7, 0, 7));
-		points.Add(new Vector3(20, 0, 7));
-		points.Add(new Vector3(13, 0, -3));
-		points.Add(new Vector3(-1, 0, -15));
-		points.Add(new Vector3(-16, 0, 2));
+	#region Singleton
+
+	// Publix readonly instance
+	public static PathGenerator instance { get; private set; }
+
+	
+	// Private constructor
+	private PathGenerator(IEnumerable<Vector3> pointsEnum) {
+		foreach (Vector3 v in pointsEnum) {
+			points.Add(v);
+		}
 	}
+
+	// Use this for initialization
+	public static void Init (IEnumerable<Vector3> pointsEnum) {
+		instance = new PathGenerator(pointsEnum);
+	}
+
+	#endregion
+
 
 
 	#region Iterator
@@ -87,20 +99,6 @@ public class PathGenerator {
 			l.UpdateResetted();
 		}
 	}
-	
-	#endregion
-
-
-
-	#region Singleton
-	
-	// Private constructor
-	private PathGenerator() {
-		Init();	
-	}
-
-	// Publix readonly instance
-	public static readonly PathGenerator instance = new PathGenerator();
 	
 	#endregion
 

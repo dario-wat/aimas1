@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System;
+using System.IO;
 
 public abstract class AbstractVehicle : MonoBehaviour {
 
@@ -37,11 +38,8 @@ public abstract class AbstractVehicle : MonoBehaviour {
 	protected const float toDeg = 180.0f / PI;
 
 	// PathGenerator object instance
-	protected PathGenerator pg = PathGenerator.instance;
+	protected PathGenerator pg;
 
-
-
-	/** Following functions need to be implemented in subclasses. **/
 
 	// Use this for initialization
 	protected virtual void Start() {
@@ -63,6 +61,7 @@ public abstract class AbstractVehicle : MonoBehaviour {
 
 	// Defined in subclasses, move to destination
 	// This is the main modelling function
+	// Returns true if at destination, else false
 	protected abstract bool MoveTo(Vector3 dest, float dt);
 
 
