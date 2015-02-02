@@ -5,4 +5,7 @@
 
 	// Method is called when PathGenerator object is resetted
 	void UpdateResetted();
+
+	// Method is called when PathGenerator calls its initialization
+	void UpdateInitialized();
 }

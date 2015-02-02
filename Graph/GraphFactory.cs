@@ -19,6 +19,27 @@ public class GraphFactory {
 	public const int N8 = 2;
 	public const int N12 = 3;
 
+	// List for moves in 4-connect neighborhood
+	private static readonly List<Vector2> movesN4 = new List<Vector2>() {
+		new Vector2( 1, 0),
+		new Vector2(-1, 0),
+		new Vector2( 0, 1),
+		new Vector2( 0,-1)
+	};
+
+	// List for moves in 8-connect neighborhood
+	private static readonly List<Vector2> movesN8 = new List<Vector2>() {
+		new Vector2( 1, 0),
+		new Vector2(-1, 0),
+		new Vector2( 0, 1),
+		new Vector2( 0,-1),
+		new Vector2( 1, 1),
+		new Vector2(-1, 1),
+		new Vector2(-1,-1),
+		new Vector2( 1,-1)
+	};
+
+
 	// Construct discrete graph from file
 	// It is returning 3 values thus out modifiers
 	// Parameter neigh tells which neighborhood to use
@@ -59,65 +80,48 @@ public class GraphFactory {
 				}
 			}
 
-			// TODO in progress
+			// Picking the right neighborhood list
+			List<Vector2> moves = null;
+			if (neigh == N4 || neigh == N12) {	// What is 12-neighborhood
+				moves = movesN4;
+			} else if (neigh == N8) {
+				moves = movesN8;
+			} else {
+				throw new ArgumentException("Neighborhood does not exist.");
+			}
+
+			// Adding edges
 			g = new GraphState(vertices);
 			foreach (IState vertex in vertices) {
 				DiscreteState state = vertex as DiscreteState;
 				int x = state.x;
 				int y = state.y;
+				Vector2 pos = new Vector2(x, y);
 
-				if (A[y,x] == 1) {
+				if (A[y,x] == 1) {		// Vertex is obstacle
 					continue;
 				}
-			}
 
-			/*
-			// Start adding edges, this part adds edges to the right and up
-			g = new GraphState(vertices);
-			for (int y = 0; y < ydim-1; y++) {
-				for (int x = 0; x < xdim-1; x++) {
-					if (A[y,x] == 1) {					// Obstacle
-						continue;
-					}
-					if (A[y+1,x] == 0) {				// Add edge up
+				// Iterate over all neighbors (moves)
+				foreach (Vector2 move in moves) {
+					Vector2 newPos = pos + move;
+					x = (int) newPos.x;
+					y = (int) newPos.y;
+
+					// Check if edge should exist
+					// Add edge with current vertex, neighbor vertex
+					// and magnitude (norm) as weight
+					if (x >= 0 && x < xdim && y >= 0 && y < ydim
+						&& A[y,x] == 0) {
+						
 						g.AddEdge(
+							state,
 							new DiscreteState(x, y),
-							new DiscreteState(x, y+1)
-						);
-					}
-					if (A[y,x+1] == 0) {				// Add edge right
-						g.AddEdge(
-							new DiscreteState(x, y),
-							new DiscreteState(x+1, y)
+							move.magnitude
 						);
 					}
 				}
 			}
-			
-			// Add rightmost column edges up
-			for (int y = 0; y < ydim-1; y++) {
-				if (A[y,xdim-1] == 0 && A[y+1,xdim-1] == 0) {	// Not obstacle
-					g.AddEdge(
-						new DiscreteState(xdim-1, y),
-						new DiscreteState(xdim-1, y+1)
-					);
-				}
-			}
-
-			// Add topmost row edges right
-			for (int x = 0; x < xdim-1; x++) {
-				if (A[ydim-1,x] == 0 && A[ydim-1,x+1] == 0) {	// Not obstacle
-					g.AddEdge(
-						new DiscreteState(x, ydim-1),
-						new DiscreteState(x+1, ydim-1)
-					);
-				}
-			}
-
-			if (neigh == N8) {
-				
-			}
-			*/
 
 		} finally {
 			sr.Close();		// Closing stream

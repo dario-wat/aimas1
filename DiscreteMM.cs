@@ -11,27 +11,6 @@ public class DiscreteMM : AbstractVehicle {
 	// Counting frames
 	private int count = 0;
 
-	void Awake() {
-		// TODO add obstacles initialization
-
-		GraphState gph;
-		IState st, go;
-		GraphFactory.CreateDiscreteFromFile(
-			"Assets/_Data/disc.dat", GraphFactory.N8, out gph, out st, out go);
-		
-
-		List<Vector3> points = new List<Vector3>();
-		AStar ast = new AStar(gph, st, go);
-		foreach (IState z in ast.path) {
-			print(z);
-			points.Add(z.ToVector3());
-		}
-		PathGenerator.Init(points);
-		pg = PathGenerator.instance;
-		print(ast.cost);
-
-		// TODO add moving around the points
-	}
 
 	// Use this for initialization
 	override protected void Start () {
@@ -40,7 +19,19 @@ public class DiscreteMM : AbstractVehicle {
 		// Check arguments
 		require(F > 0, "F has to be greater than 0");
 
+		// TODO add obstacles initialization
+		GraphState gph;
+		IState st, go;
+		GraphFactory.CreateDiscreteFromFile(
+			"Assets/_Data/disc.dat", GraphFactory.N4, out gph, out st, out go);
 		
+
+		List<Vector3> points = new List<Vector3>();
+		AStar ast = new AStar(gph, st, go);
+		foreach (IState z in ast.path) {
+			points.Add(z.ToVector3());
+		}
+		PathGenerator.Init(points);
 	}
 
 	// This function is called every F frames, and then it moves

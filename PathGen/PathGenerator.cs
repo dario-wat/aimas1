@@ -12,19 +12,21 @@ public class PathGenerator {
 	#region Singleton
 
 	// Publix readonly instance
-	public static PathGenerator instance { get; private set; }
+	public static readonly PathGenerator instance = new PathGenerator();
 
 	
-	// Private constructor
-	private PathGenerator(IEnumerable<Vector3> pointsEnum) {
-		foreach (Vector3 v in pointsEnum) {
-			points.Add(v);
-		}
+	// Private constructor 
+	private PathGenerator() {
 	}
 
 	// Use this for initialization
+	// It sets the path as the new given iterator of points
 	public static void Init (IEnumerable<Vector3> pointsEnum) {
-		instance = new PathGenerator(pointsEnum);
+		instance.points.Clear();
+		foreach (Vector3 v in pointsEnum) {
+			instance.points.Add(v);
+		}
+		instance.FireInitialized();
 	}
 
 	#endregion
@@ -100,6 +102,13 @@ public class PathGenerator {
 		}
 	}
 	
+	// Fires initialization of the path
+	private void FireInitialized() {
+		foreach (IPathListener l in observers) {
+			l.UpdateInitialized();
+		}	
+	}
+
 	#endregion
 
 }

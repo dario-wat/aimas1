@@ -37,9 +37,13 @@ public class GraphState {
 			throw new ArgumentException("Vertex does no exist");
 		}
 
-		adj[v].Add(w, d);
-		adj[w].Add(v, d);
-		E++;
+		try {
+			adj[v].Add(w, d);
+			adj[w].Add(v, d);
+			E++;
+		} catch (ArgumentException) {
+			// Adding the same edge again, just ignore it
+		}
 	}
 
 	// Adds edge to the graph with predefined weight

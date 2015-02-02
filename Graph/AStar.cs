@@ -117,7 +117,7 @@ public class AStar {
 	private float HDisc(IState curr, IState goal) {
 		DiscreteState a = curr as DiscreteState;
 		DiscreteState b = goal as DiscreteState;
-		return Math.Abs(a.x - b.x) + Math.Abs(a.y - b.y);
+		return Vector2.Distance(new Vector2(a.x, a.y), new Vector2(b.x, b.y));
 	}
 
 

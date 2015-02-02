@@ -38,7 +38,7 @@ public abstract class AbstractVehicle : MonoBehaviour {
 	protected const float toDeg = 180.0f / PI;
 
 	// PathGenerator object instance
-	protected PathGenerator pg;
+	protected PathGenerator pg = PathGenerator.instance;
 
 
 	// Use this for initialization

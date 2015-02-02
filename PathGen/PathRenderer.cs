@@ -11,10 +11,11 @@ public class PathRenderer : MonoBehaviour, IPathListener {
 	private List<GameObject> markers = new List<GameObject>();
 
 	// Parent game object for storing markers
-	private GameObject parentObject;
+	private GameObject parentObject = null;
 
 	// PathGenerator object that is used to render the path
-	private PathGenerator pg;
+	private PathGenerator pg = PathGenerator.instance;
+
 
 	// Use this for initialization
 	void Start () {
@@ -24,21 +25,7 @@ public class PathRenderer : MonoBehaviour, IPathListener {
 		}
 		
 		// Register itself as observer
-		pg = PathGenerator.instance;
 		pg.Attach(this);
-
-		// Create parent
-		parentObject = new GameObject("Path Markers");
-
-		// Create marker for each point, set active and add to parent
-		foreach (Vector3 p in pg.points) {
-			// Make a clone of the marker in the correct position
-			GameObject tempMarker = (GameObject) Instantiate(
-				markerObject, p, Quaternion.identity);
-			tempMarker.SetActive(true);
-			tempMarker.transform.parent = parentObject.transform;
-			markers.Add(tempMarker);
-		}	
 	}
 
 	// Removes the first marker from the list and destroys it
@@ -50,6 +37,29 @@ public class PathRenderer : MonoBehaviour, IPathListener {
 	public void UpdateResetted() {
 		foreach (GameObject go in markers) {
 			go.SetActive(true);
+		}
+	}
+
+	// Initializes new path, clears all markers and adds new ones
+	public void UpdateInitialized() {
+		if (parentObject != null) {		// Clear last game object
+			Destroy(parentObject);
+		}
+
+		// Create parent
+		parentObject = new GameObject("Path Markers");
+
+		// Marker reinitialize
+		markers.Clear();
+
+		// Create marker for each point, set active and add to parent
+		foreach (Vector3 p in pg.points) {
+			// Make a clone of the marker in the correct position
+			GameObject tempMarker = (GameObject) Instantiate(
+				markerObject, p, Quaternion.identity);
+			tempMarker.SetActive(true);
+			tempMarker.transform.parent = parentObject.transform;
+			markers.Add(tempMarker);
 		}
 	}
 	
