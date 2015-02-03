@@ -4,6 +4,9 @@ using System;
 
 public class DinamicMM : AbstractVehicle {
 
+	// TODO fix so it doesnt stop untl the goal
+	// TODO shild object for the car
+
 	// Velocity of the vehicle
 	public float velocity = 0.0f;
 

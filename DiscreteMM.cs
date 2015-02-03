@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 
-public class DiscreteMM : AbstractVehicle {
+public abstract class DiscreteMM : AbstractVehicle {
 
 	// How many frames have to pass to make single move
 	public int F = 60;
@@ -19,11 +19,16 @@ public class DiscreteMM : AbstractVehicle {
 		// Check arguments
 		require(F > 0, "F has to be greater than 0");
 
+
+		//*****
 		// TODO add obstacles initialization
+		//****
+
+		
 		GraphState gph;
 		IState st, go;
 		GraphFactory.CreateDiscreteFromFile(
-			"Assets/_Data/disc.dat", GraphFactory.N4, out gph, out st, out go);
+			"Assets/_Data/disc.dat", GraphFactory.N8, out gph, out st, out go);
 		
 
 		List<Vector3> points = new List<Vector3>();
@@ -32,6 +37,8 @@ public class DiscreteMM : AbstractVehicle {
 			points.Add(z.ToVector3());
 		}
 		PathGenerator.Init(points);
+		transform.position = points[0];
+		
 	}
 
 	// This function is called every F frames, and then it moves
@@ -49,11 +56,13 @@ public class DiscreteMM : AbstractVehicle {
 		int dz = (int) (dest.z - transform.position.z);
 		
 		// Pick the correct move and make discrete step
+		// It can move in diagonal also in 1 time step
 		if (dx > 0) {
 			transform.Translate(Vector3.right, Space.World);
 		} else if (dx < 0) {
 			transform.Translate(Vector3.left, Space.World);
-		} else if (dz > 0) {
+		}
+		if (dz > 0) {
 			transform.Translate(Vector3.forward, Space.World);
 		} else if (dz < 0) {
 			transform.Translate(Vector3.back, Space.World);

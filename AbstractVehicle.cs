@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using System;
-using System.IO;
 
 public abstract class AbstractVehicle : MonoBehaviour {
 
@@ -45,7 +45,10 @@ public abstract class AbstractVehicle : MonoBehaviour {
 	protected virtual void Start() {
 		transform.position = start;			// Sets the starting coordinates
 		transform.localScale = size;		// Sets the size of the vehicle
-		transform.eulerAngles = rotation;	// Sets initial rotation	
+		transform.eulerAngles = rotation;	// Sets initial rotation
+
+		
+		PathGenerator.InitSample();
 	}
 	
 	// Update is called once per frame

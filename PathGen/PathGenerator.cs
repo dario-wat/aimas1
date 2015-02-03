@@ -5,6 +5,16 @@ using System;
 
 public class PathGenerator {
 
+	// Hardcoded list of points used for demo in waypoint controllers
+	private static readonly List<Vector3> SAMPLE = new List<Vector3>() {
+		new Vector3(13, 0, 2),
+		new Vector3(9, 0, 6),
+		new Vector3(12, 0, 13),
+		new Vector3(0, 0, 8),
+		new Vector3(1, 0, 2)
+	};
+
+
 	// A list of points to describe path for vehicles to follow
 	public readonly List<Vector3> points = new List<Vector3>();
 
@@ -27,6 +37,11 @@ public class PathGenerator {
 			instance.points.Add(v);
 		}
 		instance.FireInitialized();
+	}
+
+	// Initializes path with sample hardcoded list
+	public static void InitSample() {
+		Init(SAMPLE);
 	}
 
 	#endregion
