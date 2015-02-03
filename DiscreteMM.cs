@@ -63,6 +63,9 @@ public class DiscreteMM : AbstractVehicle {
 	// This function is called every F frames, and then it moves
 	// in discrete steps
 	override protected bool MoveTo(Vector3 dest, float dt) {
+		// To make sure
+		dest.y = 0.0f;
+
 		// Counting frames
 		count++;
 		if (count <= F) {
@@ -70,31 +73,9 @@ public class DiscreteMM : AbstractVehicle {
 		}
 		count = 0;			// Reset counter
 
-		// Difference to move to
-		int dx = (int) (dest.x - transform.position.x);
-		int dz = (int) (dest.z - transform.position.z);
-		
-		// Pick the correct move and make discrete step
-		// It can move in diagonal also in 1 time step
-		/*if (dx > 0) {
-			transform.Translate(Vector3.right, Space.World);
-		} else if (dx < 0) {
-			transform.Translate(Vector3.left, Space.World);
-		}
-		if (dz > 0) {
-			transform.Translate(Vector3.forward, Space.World);
-		} else if (dz < 0) {
-			transform.Translate(Vector3.back, Space.World);
-		}*/
+		// Teleport
 		transform.position = dest;
 
-		// Compute again to decide if at destination
-		dx = (int) (dest.x - transform.position.x);
-		dz = (int) (dest.z - transform.position.z);
-
-		if (dx == 0 && dz == 0) {
-			return true;
-		}
-		return false;
+		return true;
 	}
 }
