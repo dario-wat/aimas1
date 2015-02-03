@@ -14,7 +14,20 @@ public class DiscreteMM : AbstractVehicle {
 	// Object to use to create obstacles
 	public GameObject obstacle;
 
+	// Which neighborhood to use
 	public int neighborhood = 4;
+
+	// Parent object for obstacles
+	private GameObject parent;
+
+	// GUI style to use for labels
+	private GUIStyle labelStyle;
+
+	// Rectangle to use for labels
+	private Rect labelRect;
+
+	// String to print in label
+	private string strCost;
 
 
 	// Use this for initialization
@@ -28,20 +41,18 @@ public class DiscreteMM : AbstractVehicle {
 		// It is a discrete car, make it smaller
 		transform.localScale = new Vector3(0.9f, 1.0f, 0.9f);
 
-
-		//*****
-		// TODO add obstacles initialization
-		//****
-
-		
-		GraphState gph;
-		IState st, go;
+		// Initializes some variables for graph creation
+		GraphState graph;
+		IState start, goal;
 		List<Vector3> obstacles = new List<Vector3>();
-		GraphFactory.CreateDiscreteFromFile(
-			"Assets/_Data/disc.dat", neighborhood, out gph, out st, out go,
-			obstacles);
-		GameObject parent = new GameObject("Obstacles");
+		// Create graph
+		GraphFactory.CreateDiscreteFromFile("Assets/_Data/disc.dat",
+			neighborhood, out graph, out start, out goal, obstacles);
 		
+		// Parent so it makes a nice structure
+		parent = new GameObject("Obstacles");
+		
+		// Generate all obstacles
 		foreach (Vector3 v in obstacles) {
 			Vector3 pos = new Vector3(v.x, -0.5f, v.z);
 			GameObject temp = (GameObject) 
@@ -50,20 +61,29 @@ public class DiscreteMM : AbstractVehicle {
 			temp.transform.parent = parent.transform;
 		}
 
+		// Now run astar and find path, add path to list
+		AStar ast = new AStar(graph, start, goal);
 		List<Vector3> points = new List<Vector3>();
-		AStar ast = new AStar(gph, st, go);
-		foreach (IState z in ast.path) {
-			points.Add(z.ToVector3());
+		foreach (IState s in ast.path) {
+			points.Add(s.ToVector3());
 		}
+
+		// Generate path
 		PathGenerator.Init(points);
-		transform.position = points[0];
-		
+
+		// Move to starting position
+		transform.position = start.ToVector3();
+
+		// Just to initialize and set color
+		labelStyle = new GUIStyle();
+		labelStyle.normal.textColor = Color.black;
+		labelRect = new Rect(20, 20, 20, 20);
+		strCost = "Cost: " + ast.cost;
 	}
 
+	// Otputs the cost to the screen
 	void OnGUI() {
-		GUIStyle style = new GUIStyle();
-		style.normal.textColor = Color.black;
-		GUI.Label(new Rect(0, 0, 200, 200), "Testiram malo je li oo radi ikako", style);
+		GUI.Label(labelRect, strCost, labelStyle);
 	}
 
 	// This function is called every F frames, and then it moves
