@@ -3,13 +3,18 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 
-public abstract class DiscreteMM : AbstractVehicle {
+public class DiscreteMM : AbstractVehicle {
 
 	// How many frames have to pass to make single move
-	public int F = 60;
+	public int F = 20;
 
 	// Counting frames
 	private int count = 0;
+
+	// Object to use to create obstacles
+	public GameObject obstacle;
+
+	public int neighborhood = 4;
 
 
 	// Use this for initialization
@@ -18,6 +23,10 @@ public abstract class DiscreteMM : AbstractVehicle {
 		base.Start();
 		// Check arguments
 		require(F > 0, "F has to be greater than 0");
+		require(obstacle != null, "Obstacle GameObject has to be set");
+
+		// It is a discrete car, make it smaller
+		transform.localScale = new Vector3(0.9f, 1.0f, 0.9f);
 
 
 		//*****
@@ -27,9 +36,19 @@ public abstract class DiscreteMM : AbstractVehicle {
 		
 		GraphState gph;
 		IState st, go;
+		List<Vector3> obstacles = new List<Vector3>();
 		GraphFactory.CreateDiscreteFromFile(
-			"Assets/_Data/disc.dat", GraphFactory.N8, out gph, out st, out go);
+			"Assets/_Data/disc.dat", neighborhood, out gph, out st, out go,
+			obstacles);
+		GameObject parent = new GameObject("Obstacles");
 		
+		foreach (Vector3 v in obstacles) {
+			Vector3 pos = new Vector3(v.x, -0.5f, v.z);
+			GameObject temp = (GameObject) 
+				Instantiate(obstacle, pos, Quaternion.identity);
+			temp.SetActive(true);
+			temp.transform.parent = parent.transform;
+		}
 
 		List<Vector3> points = new List<Vector3>();
 		AStar ast = new AStar(gph, st, go);
@@ -57,7 +76,7 @@ public abstract class DiscreteMM : AbstractVehicle {
 		
 		// Pick the correct move and make discrete step
 		// It can move in diagonal also in 1 time step
-		if (dx > 0) {
+		/*if (dx > 0) {
 			transform.Translate(Vector3.right, Space.World);
 		} else if (dx < 0) {
 			transform.Translate(Vector3.left, Space.World);
@@ -66,7 +85,8 @@ public abstract class DiscreteMM : AbstractVehicle {
 			transform.Translate(Vector3.forward, Space.World);
 		} else if (dz < 0) {
 			transform.Translate(Vector3.back, Space.World);
-		}
+		}*/
+		transform.position = dest;
 
 		// Compute again to decide if at destination
 		dx = (int) (dest.x - transform.position.x);

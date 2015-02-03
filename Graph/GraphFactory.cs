@@ -14,37 +14,40 @@ using System;
 */
 public class GraphFactory {
 
-	// Constants for neighborhoods
-	public const int N4 = 1;
-	public const int N8 = 2;
-	public const int N12 = 3;
-
 	// List for moves in 4-connect neighborhood
 	private static readonly List<Vector2> movesN4 = new List<Vector2>() {
-		new Vector2( 1, 0),
-		new Vector2(-1, 0),
-		new Vector2( 0, 1),
-		new Vector2( 0,-1)
+		new Vector2( 1, 0),	new Vector2(-1, 0),
+		new Vector2( 0, 1), new Vector2( 0,-1)
 	};
 
 	// List for moves in 8-connect neighborhood
 	private static readonly List<Vector2> movesN8 = new List<Vector2>() {
-		new Vector2( 1, 0),
-		new Vector2(-1, 0),
-		new Vector2( 0, 1),
-		new Vector2( 0,-1),
-		new Vector2( 1, 1),
-		new Vector2(-1, 1),
-		new Vector2(-1,-1),
-		new Vector2( 1,-1)
+		new Vector2( 1, 0), new Vector2(-1, 0),
+		new Vector2( 0, 1), new Vector2( 0,-1),
+		new Vector2( 1, 1), new Vector2(-1, 1),
+		new Vector2(-1,-1), new Vector2( 1,-1)
+	};
+
+	// List for moves in 16-connect neighborhood
+	private static readonly List<Vector2> movesN16 = new List<Vector2>() {
+		new Vector2( 1, 0), new Vector2(-1, 0),
+		new Vector2( 0, 1), new Vector2( 0,-1),
+		new Vector2( 1, 1), new Vector2(-1, 1),
+		new Vector2(-1,-1), new Vector2( 1,-1),
+		new Vector2( 2, 1), new Vector2(-2, 1),
+		new Vector2( 1, 2), new Vector2( 1,-2),
+		new Vector2( 2,-1), new Vector2(-2,-1),
+		new Vector2( 2, 1), new Vector2(-2, 1)
 	};
 
 
 	// Construct discrete graph from file
 	// It is returning 3 values thus out modifiers
 	// Parameter neigh tells which neighborhood to use
+	// Parameter obstacles is filled with vectors
 	public static void CreateDiscreteFromFile(string filename, int neigh,
-		out GraphState g, out IState start, out IState goal) {
+		out GraphState g, out IState start, out IState goal,
+		List<Vector3> obstacles) {
 
 		StreamReader sr = new StreamReader(filename);
 		try {
@@ -77,15 +80,20 @@ public class GraphFactory {
 			for (int y = 0; y < ydim; y++) {
 				for (int x = 0; x < xdim; x++) {
 					vertices.Add(new DiscreteState(x, y));
+					if (A[y,x] == 1) {	// If it is obstacle, add to list
+						obstacles.Add(new Vector3(x, 0.0f, y));
+					}
 				}
 			}
 
 			// Picking the right neighborhood list
 			List<Vector2> moves = null;
-			if (neigh == N4 || neigh == N12) {	// What is 12-neighborhood
+			if (neigh == 4) {
 				moves = movesN4;
-			} else if (neigh == N8) {
+			} else if (neigh == 8) {
 				moves = movesN8;
+			} else if (neigh == 16) {
+				moves = movesN16;
 			} else {
 				throw new ArgumentException("Neighborhood does not exist.");
 			}
