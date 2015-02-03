@@ -60,6 +60,12 @@ public class DiscreteMM : AbstractVehicle {
 		
 	}
 
+	void OnGUI() {
+		GUIStyle style = new GUIStyle();
+		style.normal.textColor = Color.black;
+		GUI.Label(new Rect(0, 0, 200, 200), "Testiram malo je li oo radi ikako", style);
+	}
+
 	// This function is called every F frames, and then it moves
 	// in discrete steps
 	override protected bool MoveTo(Vector3 dest, float dt) {
