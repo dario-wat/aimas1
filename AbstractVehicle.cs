@@ -40,6 +40,9 @@ public abstract class AbstractVehicle : MonoBehaviour {
 	// PathGenerator object instance
 	protected PathGenerator pg = PathGenerator.instance;
 
+	// Time taken to reach the goal
+	protected float totalTime = -1.0f;
+
 
 	// Use this for initialization
 	protected virtual void Start() {
@@ -47,7 +50,6 @@ public abstract class AbstractVehicle : MonoBehaviour {
 		transform.localScale = size;		// Sets the size of the vehicle
 		transform.eulerAngles = rotation;	// Sets initial rotation
 
-		
 		PathGenerator.InitSample();
 	}
 	
@@ -59,6 +61,8 @@ public abstract class AbstractVehicle : MonoBehaviour {
 			if (arrived) {
 				pg.Next();
 			}
+		} else if (totalTime < 0.0f) {
+			totalTime = Time.realtimeSinceStartup;
 		}
 	}
 

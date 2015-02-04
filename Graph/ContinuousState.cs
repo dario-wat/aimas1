@@ -2,22 +2,22 @@
 using System.Collections;
 using System;
 
-public class DiscreteState : IState {
+public class ContinuousState : IState {
 
 	// Coordinates in 2D discrete space
-	public readonly int x;
-	public readonly int y;
+	public readonly float x;
+	public readonly float y;
 
 
 	// Constructor with x and y coordinates
-	public DiscreteState(int x, int y) {
+	public ContinuousState(float x, float y) {
 		this.x = x;
 		this.y = y;
 	}
 
 	// Constructs with strings of coordinates
-	public DiscreteState(string x, string y)
-		: this(int.Parse(x), int.Parse(y)) {
+	public ContinuousState(string x, string y)
+		: this(float.Parse(x), float.Parse(y)) {
 	}
 
 	// Converts coordinates to vector
@@ -32,16 +32,16 @@ public class DiscreteState : IState {
 
 	// Hashcode of the state
 	public override int GetHashCode() {
-		return Math.Abs(x) + 31 * Math.Abs(y);
+		return x.GetHashCode() + 31 * y.GetHashCode();
 	}
 
 	// Equality
 	public override bool Equals(object other) {
-		if (!(other is DiscreteState)) {
+		if (!(other is ContinuousState)) {
 			return false;
 		}
-		DiscreteState o = (DiscreteState) other;
-		return this.x == o.x && this.y == o.y;
+		ContinuousState o = (ContinuousState) other;
+		return this.x.Equals(o.x) && this.y.Equals(o.y);
 	}
 
 	// For printing the state

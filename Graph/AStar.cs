@@ -14,6 +14,9 @@ public class AStar {
 	// Goal of the astar search
 	private readonly IState goal;
 
+	// Heuristic function
+	private readonly Func<IState, IState, float> h;
+
 	// This is the variable to save goal node, from this cost can be
 	// extracted and path traced
 	private Node goalNode;
@@ -26,7 +29,10 @@ public class AStar {
 
 
 	// Constructor, also runs astar search
-	public AStar(GraphState gph, IState start, IState goal) {
+	public AStar(GraphState gph, IState start, IState goal,
+		Func<IState, IState, float> h) {
+		
+		this.h = h;
 		this.gph = gph;
 		this.start = start;
 		this.goal = goal;
@@ -42,7 +48,7 @@ public class AStar {
 		// Initializing open and closed lists
 		IDictionary<IState, Node> closed = new Dictionary<IState, Node>();
 		List<Node> open = new List<Node>();
-		open.Add(new Node(start, 0.0f, HDisc(start, goal), null));
+		open.Add(new Node(start, 0.0f, h(start, goal), null));
 
 		while (open.Count > 0) {
 			// Take the best node out
@@ -61,7 +67,7 @@ public class AStar {
 			// Iterate over all adjacent nodes of current node
 			foreach (IState s in gph.Adjacent(curr.state)) {
 				Node temp = new Node(s, curr.g + gph.Cost(s, curr.state),
-					HDisc(s, goal), curr);
+					h(s, goal), curr);
 
 				// Check if the state exists in closed list
 				if (closed.ContainsKey(s)) {
@@ -114,12 +120,18 @@ public class AStar {
 	// Uses simple manhattan distance
 	// It looks a bit nasty with "as", but since heuristic function
 	// is an expert knowledge, it makes a lot of sense
-	private float HDisc(IState curr, IState goal) {
+	public static float HDisc(IState curr, IState goal) {
 		DiscreteState a = curr as DiscreteState;
 		DiscreteState b = goal as DiscreteState;
 		return Vector2.Distance(new Vector2(a.x, a.y), new Vector2(b.x, b.y));
 	}
 
+	// Euclidian distance fo continuous state
+	public static float HCont(IState curr, IState goal) {
+		ContinuousState a = curr as ContinuousState;
+		ContinuousState b = goal as ContinuousState;
+		return Vector2.Distance(new Vector2(a.x, a.y), new Vector2(b.x, b.y));
+	}
 
 	// Class for wrapping states into nodes
 	private class Node {

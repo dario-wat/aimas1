@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System;
+using System.Text;
 
 /**
 	Basic Graph API for all graph operations.
@@ -65,6 +66,17 @@ public class GraphState {
 			throw new ArgumentException("Vertex does no exist");
 		}
 		return adj[v][w];
+	}
+
+	// For debugging purposes
+	override public string ToString() {
+		StringBuilder sb = new StringBuilder();
+		foreach (KeyValuePair<IState, IDictionary<IState, float>> p in adj) {
+			sb.Append(p.Key.ToString()).Append('\n');
+			sb.Append(p.Value.Count);
+			sb.Append("\n\n");
+		}
+		return sb.ToString();
 	}
 
 }

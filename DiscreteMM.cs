@@ -62,7 +62,7 @@ public class DiscreteMM : AbstractVehicle {
 		}
 
 		// Now run astar and find path, add path to list
-		AStar ast = new AStar(graph, start, goal);
+		AStar ast = new AStar(graph, start, goal, AStar.HDisc);
 		List<Vector3> points = new List<Vector3>();
 		foreach (IState s in ast.path) {
 			points.Add(s.ToVector3());

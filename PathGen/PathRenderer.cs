@@ -17,15 +17,18 @@ public class PathRenderer : MonoBehaviour, IPathListener {
 	private PathGenerator pg = PathGenerator.instance;
 
 
+	// Attaches itself to the pathgenerator before anything starts
+	void Awake() {
+		// Register itself as observer
+		pg.Attach(this);
+	}
+
 	// Use this for initialization
 	void Start () {
 		// You have to set marker object in the IDE (Inspector)
 		if (!markerObject) {
 			Debug.LogError("You have to set marker object.", markerObject);
 		}
-		
-		// Register itself as observer
-		pg.Attach(this);
 	}
 
 	// Removes the first marker from the list and destroys it

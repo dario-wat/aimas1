@@ -24,7 +24,7 @@ public class PathGenerator {
 	// Publix readonly instance
 	public static readonly PathGenerator instance = new PathGenerator();
 
-	
+
 	// Private constructor 
 	private PathGenerator() {
 	}

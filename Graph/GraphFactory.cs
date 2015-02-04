@@ -11,6 +11,9 @@ using System;
 
 	Functions here are generally very big but have very little
 	intelligent code.
+
+	There is one intelligent and that is when visibility graph is created
+	in CreateVsibilityGraph function.
 */
 public class GraphFactory {
 
@@ -134,6 +137,143 @@ public class GraphFactory {
 		} finally {
 			sr.Close();		// Closing stream
 		}	
+	}
+
+
+	// Function reads the file and creates a visibility graph from the data
+	public static void CreatePolyFromFile(String filename,
+		out GraphState graph, out IState start, out IState goal,
+		List<Polygon> polys) {
+
+		StreamReader sr = new StreamReader(filename);
+		try {
+			// Read start
+			string[] sxy = sr.ReadLine().Split(' ');
+			start = new ContinuousState(sxy[0], sxy[1]);
+
+			// Read goal
+			string[] gxy = sr.ReadLine().Split(' ');
+			goal = new ContinuousState(gxy[0], gxy[1]);
+
+			// Read number of vertices
+			int count = int.Parse(sr.ReadLine());
+			int[] button = new int[count];
+			Vector2[] vertices = new Vector2[count];
+			
+			// Read vertices and buttons
+			for (int i = 0; i < count; i++) {
+				string[] line = sr.ReadLine().Split(' ');
+				vertices[i] = new Vector2(
+					float.Parse(line[0]), float.Parse(line[1]));
+				button[i] = int.Parse(line[2]);
+			}
+
+			// Create visibility
+			graph = CreateVisibilityGraph(count, button, vertices,
+				start.ToVector2(), goal.ToVector2(), polys);
+
+		} finally {
+			sr.Close();		// Close stream
+		}
+	}
+
+	// Creates visibility graph from the given data
+	public static GraphState CreateVisibilityGraph(int n, int[] button,
+		Vector2[] points, Vector2 start, Vector2 goal, List<Polygon> polys) {
+		
+		// Initialize vertices collection
+		List<Vector2> vertices = new List<Vector2>(points);
+		vertices.Add(start);
+		vertices.Add(goal);
+
+		// Initialize polygon and edges collection
+		List<Edge> edges = new List<Edge>();
+		List<Vector2> buffer = new List<Vector2>();
+		for (int i = 0; i < n; i++) {
+			buffer.Add(points[i]);
+			if (button[i] == 3) {
+				Polygon newPol = new Polygon(buffer);
+				polys.Add(newPol);
+				foreach (Edge e in newPol.IterEdges()) {
+					edges.Add(e);
+				}
+				buffer.Clear();
+			}
+		}
+
+		// Initialize graph with vertices
+		List<IState> vert = new List<IState>();
+		foreach (Vector2 v in vertices) {
+			vert.Add(new ContinuousState(v.x, v.y));
+		}
+		GraphState g = new GraphState(vert);
+
+
+		// Iterate over all vertices
+		// This part is O(n^3)
+		foreach (Vector2 f in vertices) {
+			foreach (Vector2 s in vertices) {
+				if (f.Equals(s)) {		// Same vertex
+					continue;
+				}
+
+				// Create current edge
+				Edge curr = new Edge(f, s);
+				bool intersects = false;
+
+				// Iterate over all edges
+				// This is inner loop
+				foreach (Edge e in edges) {
+					if (curr.Intersect(e)) {	// Check each edge
+						intersects = true;
+						break;
+					}
+
+					// Checking if midpoint is inside polygon
+					Vector2 p = (f + s) / 2.0f;
+
+					// Find which polygon edge belongs to
+					Polygon pol = null;
+					foreach (Polygon polTmp in polys) {
+						// Only interested if edge is not actual edge of the
+						// polygon, but a contact between any other 2 points
+						// that do not form and edge
+						if (	polTmp.ContainsVertex(f)
+							&& 	polTmp.ContainsVertex(s)
+							&&	!polTmp.ContainsEdge(curr)) {
+							
+							pol = polTmp;
+							break;
+						}
+					}
+
+					// No polygon found, it doesn't belong to polygon
+					if (pol == null) {
+						continue;
+					}
+
+					// Otherwise, polygon is found
+					// Checking if the point is inside the polygon
+					if (pol.IsInside(p)) {
+						intersects = true;
+						break;
+					}
+				}
+
+				// If there is any kind of intersection with polygon
+				// or edge is inside polygon, continue to next case
+				if (intersects) {
+					continue;
+				}
+
+				// Otherwise, current edge is visible and is added tp the graph
+				IState a = new ContinuousState(f.x, f.y);
+				IState b = new ContinuousState(s.x, s.y);
+				g.AddEdge(a, b, Vector2.Distance(f, s));
+			}
+		}
+
+		return g;
 	}
 
 }
