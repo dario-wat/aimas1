@@ -22,6 +22,9 @@ public class KinematicMM : AbstractVehicle {
 	// String to print in label
 	private string strCost;
 
+	// Name of the file for poly data
+	public string obstacleFilename;
+
 
 	// Use this for initialization
 	override protected void Start () {
@@ -37,7 +40,7 @@ public class KinematicMM : AbstractVehicle {
 		GraphState graph;
 		IState start, goal;
 		List<Polygon> polys = new List<Polygon>();
-		GraphFactory.CreatePolyFromFile("Assets/_Data/poly.dat",
+		GraphFactory.CreatePolyFromFile("Assets/_Data/" + obstacleFilename,
 			out graph, out start, out goal, polys);
 		
 		// Generate and render all obstacles
@@ -65,7 +68,7 @@ public class KinematicMM : AbstractVehicle {
 		labelStyle = new GUIStyle();
 		labelStyle.normal.textColor = Color.black;
 		labelRect = new Rect(20, 20, 20, 20);
-		strCost = "Cost: " + ast.cost;
+		strCost = "Distance: " + ast.cost.ToString("0.00");
 	}
 
 	// Prints on screen labels for cost and time
