@@ -15,6 +15,7 @@ public class KinematicMM : AbstractVehicleWaypoint {
 	// Maximum velocity
 	public float maxVelocity = 5.0f;
 
+	// Material for obstacles
 	public Material material;
 
 	// GUI style to use for labels
