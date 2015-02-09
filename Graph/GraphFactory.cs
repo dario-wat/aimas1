@@ -228,41 +228,34 @@ public class GraphFactory {
 						intersects = true;
 						break;
 					}
-
-					// Checking if midpoint is inside polygon
-					Vector2 p = (f + s) / 2.0f;
-
-					// Find which polygon edge belongs to
-					Polygon pol = null;
-					foreach (Polygon polTmp in polys) {
-						// Only interested if edge is not actual edge of the
-						// polygon, but a contact between any other 2 points
-						// that do not form and edge
-						if (	polTmp.ContainsVertex(f)
-							&& 	polTmp.ContainsVertex(s)
-							&&	!polTmp.ContainsEdge(curr)) {
-							
-							pol = polTmp;
-							break;
-						}
-					}
-
-					// No polygon found, it doesn't belong to polygon
-					if (pol == null) {
-						continue;
-					}
-
-					// Otherwise, polygon is found
-					// Checking if the point is inside the polygon
-					if (pol.IsInside(p)) {
-						intersects = true;
-						break;
-					}
 				}
 
 				// If there is any kind of intersection with polygon
-				// or edge is inside polygon, continue to next case
+				// continue to next case
 				if (intersects) {
+					continue;
+				}
+
+				// Checking if midpoint is inside polygon
+				Vector2 p = (f + s) / 2.0f;
+
+				// Find which polygon edge belongs to
+				Polygon pol = null;
+				foreach (Polygon polTmp in polys) {
+					// Only interested if edge is not actual edge of the
+					// polygon, but a contact between any other 2 points
+					// that do not form and edge
+					if (	polTmp.ContainsVertex(f)
+						&& 	polTmp.ContainsVertex(s)
+						&&	!polTmp.ContainsEdge(curr)) {
+						
+						pol = polTmp;
+						break;
+					}
+				}
+				
+				// Checking if the point is inside the polygon
+				if (pol != null && pol.IsInside(p)) {
 					continue;
 				}
 

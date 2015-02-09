@@ -8,6 +8,9 @@ using System;
 */
 public class Edge {
 
+	// Const to ensure that the algorithms finds proper intersections
+	private const float e = 0.0001f;
+
 	// Two vertices that define the edge
 	public Vector2 v { get; private set; }
 	public Vector2 w { get; private set; }
@@ -47,10 +50,10 @@ public class Edge {
 		Vector2 w2 = other.w;
 
 		// Complicated last return
-		return 	p.x >= Math.Min(v1.x, w1.x) && p.x <= Math.Max(v1.x, w1.x)
-			&&	p.x >= Math.Min(v2.x, w2.x) && p.x <= Math.Max(v2.x, w2.x)
-			&&	p.y >= Math.Min(v1.y, w1.y) && p.y <= Math.Max(v1.y, w1.y)
-			&&	p.y >= Math.Min(v2.y, w2.y) && p.y <= Math.Max(v2.y, w2.y);
+		return 	p.x+e >= Math.Min(v1.x, w1.x) && p.x-e <= Math.Max(v1.x, w1.x)
+			&&	p.x+e >= Math.Min(v2.x, w2.x) && p.x-e <= Math.Max(v2.x, w2.x)
+			&&	p.y+e >= Math.Min(v1.y, w1.y) && p.y-e <= Math.Max(v1.y, w1.y)
+			&&	p.y+e >= Math.Min(v2.y, w2.y) && p.y-e <= Math.Max(v2.y, w2.y);
 	}
 
 	// Two edges are equal if they have equal vertices
@@ -66,6 +69,11 @@ public class Edge {
 	// To use in dictionaries
 	override public int GetHashCode() {
 		return v.GetHashCode() + w.GetHashCode();
+	}
+
+	// For debugging
+	override public string ToString() {
+		return "[ " + v.ToString() + ", " + w.ToString() + " ]";
 	}
 
 }
