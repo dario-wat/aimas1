@@ -2,7 +2,7 @@
 using System.Collections;
 using System;
 
-public class KinematicCarMM : AbstractVehicle {
+public class KinematicCarMM : AbstractVehicleWaypoint {
 
 	// Velocity of the car
 	public float velocity = 0.0f;

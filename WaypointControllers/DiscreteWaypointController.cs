@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 
-public class DiscreteWaypointController : AbstractVehicle {
+public class DiscreteWaypointController : AbstractVehicleWaypoint {
 
 	// How many frames have to pass to make single move
 	public int F = 20;

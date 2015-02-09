@@ -3,7 +3,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 
-public class KinematicMM : AbstractVehicle {
+/**
+	This is the class for Kinematic Point Motion Model. It is a waypoint
+	model which gives optimal path using Visibility graph wit hA* search.
+**/
+public class KinematicMM : AbstractVehicleWaypoint {
 
 	// Velocity of the vehicle
 	public float velocity = 1.0f;

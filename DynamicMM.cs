@@ -2,7 +2,7 @@
 using System.Collections;
 using System;
 
-public class DinamicMM : AbstractVehicle {
+public class DynamicMM : AbstractVehicleWaypoint {
 
 	// TODO fix so it doesnt stop untl the goal
 	// TODO shild object for the car

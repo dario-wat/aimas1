@@ -2,7 +2,7 @@
 using System.Collections;
 using System;
 
-public class DiffDriveMM : AbstractVehicle {
+public class DiffDriveMM : AbstractVehicleWaypoint {
 
 	// Velocity of the vehicle
 	public float velocity = 1.0f;
