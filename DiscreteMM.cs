@@ -3,6 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System;
 
+/**
+	This class is for Discrete Motion Model. It is both waypoint and gives
+	optimal path found using A*.
+**/
 public class DiscreteMM : AbstractVehicleWaypoint {
 
 	// How many frames have to pass to make single move
