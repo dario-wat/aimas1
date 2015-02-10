@@ -47,7 +47,7 @@ public abstract class AbstractVehicle : MonoBehaviour {
 	protected Vector2 goalPos;
 
 	// List of moves that car has to perform
-	protected abstract Queue<Move> moves { get; set; }
+	protected abstract Stack<Move> moves { get; set; }
 
 	// Cost of the path
 	protected abstract float cost { get; set; }
@@ -85,11 +85,11 @@ public abstract class AbstractVehicle : MonoBehaviour {
 	void Update () {
 		float dt = Time.deltaTime;
 		if (moves.Count > 0) {
-			while (true) {
-				Move move = moves.Dequeue();
+			while (moves.Count > 0) {
+				Move move = moves.Pop();
 				dt = move.MoveMe(transform, dt);
 				if (dt == 0.0f) {
-					moves.Enqueue(move);
+					moves.Push(move);
 					break;
 				}
 			}

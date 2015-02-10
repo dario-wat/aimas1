@@ -1,7 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
-using System;
 
 public class KinematicPointState : IVehicleState<KinematicPointState> {
 
@@ -14,6 +13,14 @@ public class KinematicPointState : IVehicleState<KinematicPointState> {
 
 	// Range to generate random number
 	public static float limit = 100.0f;
+
+	public Vector2 vec2 {
+		get { return new Vector2(x, y); }
+	}
+
+	public Vector3 vec3 {
+		get { return new Vector3(x, 0.0f, y); }
+	}
 
 
 	// Constructor to set position
@@ -40,28 +47,21 @@ public class KinematicPointState : IVehicleState<KinematicPointState> {
 		float distance = this.Distance(other);
 		float t = distance / maxVel;			// How long to move
 		
-		float dx = other.x - this.x;			// Direction
-		float dy = other.y - this.y;
-		Vector2 vel = new Vector2(dx, dy);
+		Vector2 vel = other.vec2 - this.vec2;
 		vel.Normalize();
 		vel *= maxVel;
-		dx = vel.x;								// Normalized direction
-		dy = vel.y;
+		float dx = vel.x;								// Normalized direction
+		float dy = vel.y;
 		
 		moves.Add(new Move(dx, dy, t));
 		return moves;
 	}
 
-	// Vector3 representation of location
-	public Vector3 Location() {
-		return new Vector3(x, 0.0f, y);
-	}
 
 	// Generates new random kinematic point state
 	public static KinematicPointState GenerateRandom() {
-		System.Random r = new System.Random();
-		float x = (float) r.NextDouble() * limit;
-		float y = (float) r.NextDouble() * limit;
+		float x = Random.Range(0.0f, limit);
+		float y = Random.Range(0.0f, limit);
 		return new KinematicPointState(x, y);
 	}
 
@@ -72,5 +72,10 @@ public class KinematicPointState : IVehicleState<KinematicPointState> {
 		}
 		KinematicPointState o = other as KinematicPointState;
 		return this.x.Equals(o.x) && this.y.Equals(o.y);
+	}
+
+	// For debugging
+	override public string ToString() {
+		return string.Format("{0} {1}", x, y);
 	}
 }
