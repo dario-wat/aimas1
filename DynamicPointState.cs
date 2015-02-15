@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 public class DynamicPointState : IVehicleState<DynamicPointState> {
 
@@ -9,6 +10,20 @@ public class DynamicPointState : IVehicleState<DynamicPointState> {
 
 	// Maximum acceleration
 	public static float maxAcc = 1.0f;
+
+	// Number of points to use for collision detecting
+	public static int collisionPoints = 3;
+
+	// Heuristic for moving
+	public static string heuristic;
+
+	// Heuristic parameter
+	public static float hParam;
+
+	// Heuristics
+	private static string distanceH = "Distance";
+	private static string timeH = "Time";
+
 
 	// Coordinates
 	private float x;
@@ -38,7 +53,7 @@ public class DynamicPointState : IVehicleState<DynamicPointState> {
 	}
 
 	public float Distance(DynamicPointState other) {
-		return Vector2.Distance(this.vec2, other.vec2);
+		return Vector2.Distance(this.vec2, other.vec2) / (velocity.magnitude+1);
 	}
 
 	// desired_velocity = normalize (position - target) * max_speed
@@ -46,12 +61,24 @@ public class DynamicPointState : IVehicleState<DynamicPointState> {
 	public Tuple<List<Move>, DynamicPointState> MovesTo(
 		DynamicPointState other) {
 
-		Vector3 diff = this.vec3 - other.vec3;
+		Vector3 diff = other.vec3 - this.vec3;
 		Vector3 desired = diff.normalized * Vector3.Distance(this.vec3, other.vec3);
-		Vector3 acc = desired - velocity;
+		Vector3 acc = (desired - velocity).normalized * maxAcc;
 		List<Move> moves = new List<Move>();
+		
+		float t;
+		if (heuristic.Equals(timeH)) {
+			t = hParam;
+		} else if (heuristic.Equals(distanceH)) {
+			float s = hParam;
+			t=(-velocity.magnitude
+				+ Mathf.Sqrt(velocity.magnitude * velocity.magnitude
+					- 2 * maxAcc * (-s)))
+				/ (maxAcc);
+		} else {
+			throw new ArgumentException("No such heuristic");
+		}
 
-		float t = 1.25f;
 		Vector3 newPos = this.vec3 + velocity * t + 0.5f * acc * t * t;
 		Vector3 newVel = velocity + acc * t;
 		DynamicPointState newState = new DynamicPointState(newPos, newVel); 
@@ -67,11 +94,11 @@ public class DynamicPointState : IVehicleState<DynamicPointState> {
 
 	// State generator
 	public static DynamicPointState GenerateRandom() {
-		float x = Random.Range(lo, hi);
-		float y = Random.Range(lo, hi);
+		float x = UnityEngine.Random.Range(lo, hi);
+		float y = UnityEngine.Random.Range(lo, hi);
 
-		float dx = Random.Range(-maxAcc*10, maxAcc*10);
-		float dy = Random.Range(-maxAcc*10, maxAcc*10);
+		float dx = UnityEngine.Random.Range(-maxAcc*10, maxAcc*10);
+		float dy = UnityEngine.Random.Range(-maxAcc*10, maxAcc*10);
 		return new DynamicPointState(x, y, new Vector3(dx, 0, dy));
 	}
 }

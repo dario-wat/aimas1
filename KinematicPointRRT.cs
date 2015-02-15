@@ -75,12 +75,14 @@ public class KinematicPointRRT : AbstractVehicle {
 				}
 			}
 			// Draw path edges and vertices
-			Gizmos.color = Color.green;
-			foreach (Vector3 c in rrt.corners) {
-				Gizmos.DrawSphere(c, 1);
-			}
-			foreach (Edge e in rrt.pathEdges) {
-				e.GizmosDraw(Color.green);
+			if (gizmosPath) {
+				Gizmos.color = Color.green;
+				foreach (Vector3 c in rrt.corners) {
+					Gizmos.DrawSphere(c, 1);
+				}
+				foreach (Edge e in rrt.pathEdges) {
+					e.GizmosDraw(Color.green);
+				}
 			}
 		}
 	}

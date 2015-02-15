@@ -4,6 +4,7 @@ using System.Linq;
 
 public class KinematicCarRRT : AbstractVehicle {
 
+	// Kinematic car parameters
 	public float maxVel;
 	public float maxPhi;
 	public float L;
@@ -12,13 +13,26 @@ public class KinematicCarRRT : AbstractVehicle {
 	private KinematicCarState startState;
 	private KinematicCarState goalState;
 
+	// RRT
 	private RRT<KinematicCarState> rrt;
 
+	// RRT data needed for base class
 	override protected Stack<Move> moves { get; set; }
 	override protected float cost { get; set; }
 	override protected float rrtTime { get; set; }
 
+	// Data points for realistic path
+	private List<Vector3> poss = new List<Vector3>();
 
+
+	// Requirements for kinematic car parameters
+	override protected void LocalRequirements() {
+		require(maxVel > 0, "Maximum velocity must be greater than 0");
+		require(maxPhi > 0, "Maximu wheel angle must be greater than 0");
+		require(L > 0, "Car length must be greater than 0");
+	}
+
+	// Initializes and runs rrt
 	override protected void LocalStart() {
 		// Setting state options
 		KinematicCarState.maxVel = maxVel;
@@ -26,11 +40,18 @@ public class KinematicCarRRT : AbstractVehicle {
 		KinematicCarState.L = L;
 		KinematicCarState.lo = lowLimitRRT;
 		KinematicCarState.hi = highLimitRRT;
+		
+		// Set scale and rotate to right
 		transform.localScale = new Vector3(1, 1, L);
 		transform.rotation = Quaternion.Euler(0, 90, 0);
 
-		startState = new KinematicCarState(startPos.x, startPos.y, Vector3.right);
-		goalState = new KinematicCarState(goalPos.x, goalPos.y, Vector3.right);
+		// Create states, rotation is right
+		startState = new KinematicCarState(
+			startPos.x, startPos.y, Vector3.right);
+		goalState = new KinematicCarState(
+			goalPos.x, goalPos.y, Vector3.right);
+		
+		// Run rrt
 		rrt = new RRT<KinematicCarState>(
 			startState,
 			goalState,
@@ -40,19 +61,12 @@ public class KinematicCarRRT : AbstractVehicle {
 			neighborhood
 		);
 
+		// Set moves and other data needed for base
 		moves = new Stack<Move>(Enumerable.Reverse(rrt.moves));
-		//moves = new Stack<Move>(new Move[] {
-		//	new Move(Vector3.back, -10, 30, 3),
-		//	new Move(Vector3.right, -10, 120.19f, 3.387f)
-		//});
-
-		foreach (Move m in moves) {
-			print(m);
-		}
-
 		cost = rrt.cost;
 		rrtTime = rrt.runTime;
 
+		// This part generates points for realistic path
 		GameObject tmp = new GameObject();
 		Transform tr = tmp.transform;
 		tr.position = transform.position;
@@ -70,16 +84,18 @@ public class KinematicCarRRT : AbstractVehicle {
 		Destroy(tmp);
 	}
 
-	List<Vector3> poss = new List<Vector3>();
+	
 	// Draws all nice gizmos and shit
 	// Can be easily disabled by clicking on Gizmos icon in the scene window
 	void OnDrawGizmos() {
 		if (rrt != null) {
+			// Draws realistic path
 			Gizmos.color = Color.blue;
 			foreach (Vector3 v in poss) {
 				Gizmos.DrawSphere(v, 0.3f);
 			}
 			
+			// Draws edges			
 			if (gizmosEdges) {
 				Gizmos.color = Color.red;
 				foreach (Edge e in rrt.edges) {
@@ -87,12 +103,15 @@ public class KinematicCarRRT : AbstractVehicle {
 				}
 			}
 
+			// Draws vertices
 			if (gizmosVertices) {
 				Gizmos.color = Color.red;
 				foreach (Vector3 v in rrt.vertices) {
 					Gizmos.DrawSphere(v, 1);
 				}
 			}
+
+			// Draws vertices and edges of the path
 			if (gizmosPath) {
 				Gizmos.color = Color.green;
 				foreach (Vector3 c in rrt.corners) {
@@ -104,6 +123,7 @@ public class KinematicCarRRT : AbstractVehicle {
 				}
 			}
 
+			// Draws a point at the back of the car
 			Gizmos.color = Color.magenta;
 			Gizmos.DrawSphere(transform.position, 1);
 		}

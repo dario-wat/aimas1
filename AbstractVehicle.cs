@@ -41,6 +41,9 @@ public abstract class AbstractVehicle : MonoBehaviour {
 	// Which things should be Gizmoed
 	public bool gizmosEdges, gizmosVertices, gizmosPath;
 
+	// If create walls or not
+	public bool createWalls = true;
+
 
 	/** Next up, a few private/protected variables to manage abstraction. **/
 
@@ -105,14 +108,16 @@ public abstract class AbstractVehicle : MonoBehaviour {
 		}
 
 		// Creating walls around the maze
-		GameObject wallParent = new GameObject();
-		wallParent.name = "Walls";
-		float lo = lowLimitRRT - 10, hi = highLimitRRT + 10;
-		CreateWall(new Vector3(lo, 0, lo), new Vector3(hi, 0, lo), wallParent);
-		CreateWall(new Vector3(lo, 0, lo), new Vector3(lo, 0, hi), wallParent);
-		CreateWall(new Vector3(hi, 0, lo), new Vector3(hi, 0, hi), wallParent);
-		CreateWall(new Vector3(lo, 0, hi), new Vector3(hi, 0, hi), wallParent);
-		
+		if (createWalls) {
+			GameObject wallPar = new GameObject();		// Parent
+			wallPar.name = "Walls";
+			float lo = lowLimitRRT - 10, hi = highLimitRRT + 10;
+			CreateWall(new Vector3(lo, 0, lo), new Vector3(hi, 0, lo), wallPar);
+			CreateWall(new Vector3(lo, 0, lo), new Vector3(lo, 0, hi), wallPar);
+			CreateWall(new Vector3(hi, 0, lo), new Vector3(hi, 0, hi), wallPar);
+			CreateWall(new Vector3(lo, 0, hi), new Vector3(hi, 0, hi), wallPar);
+		}
+
 		// Whatever subclass has to do
 		LocalStart();
 
