@@ -62,7 +62,7 @@ public class KinematicPointState : IVehicleState<KinematicPointState> {
 		float dx = vel.x;								// Normalized direction
 		float dy = vel.y;
 		
-		moves.Add(new Move(new Vector3(dx, 0, dy).normalized, maxVel, 0.0f, t));
+		moves.Add(new KinematicPointMove(new Vector3(dx, 0, dy).normalized, maxVel, t));
 		return new Tuple<List<Move>, KinematicPointState>(moves, other);
 	}
 

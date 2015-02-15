@@ -190,14 +190,14 @@ public class KinematicCarState : IVehicleState<KinematicCarState> {
 		List<Move> moves = new List<Move>();
 		/*negative speed: back up!  if the angle needed to make and the direction of the circle are of opposite sign the speed should be negative*/
 		float speed = maxVel * Mathf.Sign(sa) * Mathf.Sign(di.y);
-		moves.Add( new Move(veli.normalized, speed, w * toDeg * Mathf.Sign(di.y), Mathf.Abs(sa) * toRad/ w) );
+		moves.Add( new KinematicCarMove(veli.normalized, speed, w * toDeg * Mathf.Sign(di.y), Mathf.Abs(sa) * toRad/ w) );
 		
 		Vector3 orientation = Quaternion.Euler(0, sa, 0) * veli.normalized;
 		speed = maxVel * ((Vector3.Angle (orientation, straight) < 90) ? 1 : -1);  // If the orientation and straight path are opposite we need a negative velocity
-		moves.Add( new Move(orientation, speed, 0, s / Mathf.Abs(speed)) );
+		moves.Add( new KinematicCarMove(orientation, speed, 0, s / Mathf.Abs(speed)) );
 		
 		speed = maxVel * Mathf.Sign(ea) * Mathf.Sign(df.y);
-		moves.Add( new Move(orientation, speed, w * toDeg * Mathf.Sign(df.y), Mathf.Abs(ea) * toRad / w) );
+		moves.Add( new KinematicCarMove(orientation, speed, w * toDeg * Mathf.Sign(df.y), Mathf.Abs(ea) * toRad / w) );
 
 		return moves;
 	}

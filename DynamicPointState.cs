@@ -82,7 +82,7 @@ public class DynamicPointState : IVehicleState<DynamicPointState> {
 		Vector3 newPos = this.vec3 + velocity * t + 0.5f * acc * t * t;
 		Vector3 newVel = velocity + acc * t;
 		DynamicPointState newState = new DynamicPointState(newPos, newVel); 
-		moves.Add(new Move(velocity, acc, acc.magnitude, t));
+		moves.Add(new DynamicPointMove(velocity, acc, t));
 		return new Tuple<List<Move>, DynamicPointState>(moves, newState);
 	}
 

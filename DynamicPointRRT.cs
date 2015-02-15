@@ -47,7 +47,7 @@ public class DynamicPointRRT : AbstractVehicle {
 			neighborhood
 		);
 
-		Move last = rrt.moves[rrt.moves.Count-1];
+		DynamicPointMove last = rrt.moves[rrt.moves.Count-1] as DynamicPointMove;
 		Vector3 lastVel = last.velocity * last.speed;
 		float lastTime = lastVel.magnitude / maxAcceleration;
 		Move lastMove = new Move(lastVel, -lastVel.normalized,
