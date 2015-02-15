@@ -7,11 +7,15 @@ public class PathGenerator {
 
 	// Hardcoded list of points used for demo in waypoint controllers
 	private static readonly List<Vector3> SAMPLE = new List<Vector3>() {
-		new Vector3(13, 0, 2),
-		new Vector3(9, 0, 6),
-		new Vector3(12, 0, 13),
-		new Vector3(0, 0, 8),
-		new Vector3(1, 0, 2)
+		//new Vector3(13, 0, 2),
+		//new Vector3(9, 0, 6),
+		//new Vector3(12, 0, 13),
+		//new Vector3(0, 0, 8),
+		//new Vector3(1, 0, 2)
+		new Vector3(0, 0, 0),
+		new Vector3(4.289013f, 0, 4.289013f),
+		new Vector3(4.289013f+20, 0, 4.289013f),
+		new Vector3(2*4.289013f+20, 0, 0)
 	};
 
 

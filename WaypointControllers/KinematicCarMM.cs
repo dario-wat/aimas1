@@ -30,6 +30,7 @@ public class KinematicCarMM : AbstractVehicleWaypoint {
 	override protected void Start () {
 		// Calling super initialization
 		base.Start();
+		transform.eulerAngles = Vector3.forward;
 		// Check arguments
 		require(maxPhi > 0.0f, "Max Omega must be greater than 0");
 		require(maxVelocity > 0.0f, "Max Velocity must be greater than 0");
@@ -37,6 +38,8 @@ public class KinematicCarMM : AbstractVehicleWaypoint {
 		theta = transform.eulerAngles.y;
 		// Set car length
 		L = transform.localScale.z;
+		float w = maxVelocity / L * Mathf.Tan(maxPhi * toRad);
+		Debug.Log(maxVelocity / w);
 	}
 	
 	// Make move to next point

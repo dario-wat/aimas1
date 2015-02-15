@@ -12,40 +12,75 @@ public class KinematicPointRRT : AbstractVehicle {
 	private KinematicPointState startState;
 	private KinematicPointState goalState;
 
-	// Queue of moves
+	// Reference to RRT to get all the needed data
+	private RRT<KinematicPointState> rrt;
+
+	// Stack of moves
 	override protected Stack<Move> moves { get; set; }
 
+	// The cost of the trip
 	override protected float cost { get; set; }
-	RRT<KinematicPointState> rrt;
+
+	// RRT runtime
+	override protected float rrtTime { get; set; }
+	
 
 	// Runs RRT and finds path
 	override protected void LocalStart() {
+		// Setting state options
 		KinematicPointState.maxVel = maxVel;
+		KinematicPointState.lo = lowLimitRRT;
+		KinematicPointState.hi = highLimitRRT;
+
+		// Initialize and run RRT
 		startState = new KinematicPointState(startPos);
 		goalState = new KinematicPointState(goalPos);
 		rrt = new RRT<KinematicPointState>(
-			startState, goalState, KinematicPointState.GenerateRandom, polys);
+			startState,
+			goalState,
+			KinematicPointState.GenerateRandom,
+			polys,
+			iterations,
+			neighborhood
+		);
+		// Create a stack of moves, very important to use stack
 		moves = new Stack<Move>(Enumerable.Reverse(rrt.moves));
-		foreach (Move m in moves) {
-			Debug.Log(m);
-		}
-		Debug.Log(moves.Count);
-		cost = 0.0f;
+
+		// Set cost and init time which will be printed to screen later
+		cost = rrt.cost;
+		rrtTime = rrt.runTime;
 	}
 
+	// Check requirements
+	override protected void LocalRequirements() {
+		require(maxVel > 0.0f, "Maximum velocity has to be positive");
+	}
+
+	// Draws all nice gizmos and shit
+	// Can be easily disabled by clicking on Gizmos icon in the scene window
 	void OnDrawGizmos() {
 		if (rrt != null) {
-			Gizmos.color = Color.red;
-			foreach (Edge e in rrt.edges) {
-				e.GizmosDraw(Color.red);
+			// Draw edges
+			if (gizmosEdges) {
+				Gizmos.color = Color.red;
+				foreach (Edge e in rrt.edges) {
+					e.GizmosDraw(Color.red);
+				}
 			}
-			Gizmos.color = Color.red;
-			foreach (Vector3 v in rrt.vertices) {
-				Gizmos.DrawSphere(v, 1);
+			// Draw vertices
+			if (gizmosVertices) {
+				Gizmos.color = Color.red;
+				foreach (Vector3 v in rrt.vertices) {
+					Gizmos.DrawSphere(v, 1);
+				}
 			}
+			// Draw path edges and vertices
 			Gizmos.color = Color.green;
 			foreach (Vector3 c in rrt.corners) {
 				Gizmos.DrawSphere(c, 1);
+			}
+			foreach (Edge e in rrt.pathEdges) {
+				e.GizmosDraw(Color.green);
 			}
 		}
 	}

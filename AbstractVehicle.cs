@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System;
 
 public abstract class AbstractVehicle : MonoBehaviour {
 
@@ -23,6 +24,22 @@ public abstract class AbstractVehicle : MonoBehaviour {
 
 	// Material used for obstacles
 	public Material material;
+
+	// Object used for walls
+	public GameObject wall;
+
+	// Number of iterations for RRT
+	public int iterations = 100;
+
+	// Size of the neighborhood
+	public int neighborhood = 1;
+
+	// Low and high limits for RRT generators
+	public float lowLimitRRT = 0.0f;
+	public float highLimitRRT = 100.0f;
+
+	// Which things should be Gizmoed
+	public bool gizmosEdges, gizmosVertices, gizmosPath;
 
 
 	/** Next up, a few private/protected variables to manage abstraction. **/
@@ -52,9 +69,25 @@ public abstract class AbstractVehicle : MonoBehaviour {
 	// Cost of the path
 	protected abstract float cost { get; set; }
 
+	// Time to run the initiaization
+	protected float initTime;
+
+	// Runtime of RRT
+	protected abstract float rrtTime { get; set; }
+
 
 	// Use this for initialization
 	void Start() {
+		// Checking variables
+		require(iterations > 0, "Number of iterations has to be positive");
+		require(neighborhood > 0, "Neighborhood size has to be positive");
+		require(material != null, "You have to set material");
+		require(wall != null, "You have to set wall object");
+		require(lowLimitRRT < highLimitRRT,
+			"Low limit has to be lower than high");
+		LocalRequirements();
+		
+		// Initialization
 		transform.position = start;			// Sets the starting coordinates
 		transform.localScale = size;		// Sets the size of the vehicle
 		transform.eulerAngles = rotation;	// Sets initial rotation
@@ -71,6 +104,15 @@ public abstract class AbstractVehicle : MonoBehaviour {
 			go.transform.parent = parent.transform;
 		}
 
+		// Creating walls around the maze
+		GameObject wallParent = new GameObject();
+		wallParent.name = "Walls";
+		float lo = lowLimitRRT - 10, hi = highLimitRRT + 10;
+		CreateWall(new Vector3(lo, 0, lo), new Vector3(hi, 0, lo), wallParent);
+		CreateWall(new Vector3(lo, 0, lo), new Vector3(lo, 0, hi), wallParent);
+		CreateWall(new Vector3(hi, 0, lo), new Vector3(hi, 0, hi), wallParent);
+		CreateWall(new Vector3(lo, 0, hi), new Vector3(hi, 0, hi), wallParent);
+		
 		// Whatever subclass has to do
 		LocalStart();
 
@@ -79,6 +121,9 @@ public abstract class AbstractVehicle : MonoBehaviour {
 		labelStyle.normal.textColor = Color.black;
 		labelRect = new Rect(20, 20, 20, 20);
 		strCost = "Distance/Cost/Time: " + cost.ToString("0.00");
+
+		// End of initialization
+		initTime = Time.realtimeSinceStartup;
 	}
 	
 	// Update is called once per frame
@@ -101,7 +146,9 @@ public abstract class AbstractVehicle : MonoBehaviour {
 	// Prints on screen labels for cost and time
 	void OnGUI() {
 		string toLab = strCost
-			+ "\nTime: " + Time.realtimeSinceStartup.ToString("0.00") + " s";
+			+ "\nTime: " + Time.realtimeSinceStartup.ToString("0.00") + " s"
+			+ "\nInit Time: " + initTime.ToString("0.00") + " s"
+			+ "\nRRT Time: " + rrtTime.ToString("0.00") + " s";
 		if (totalTime > 0.0f) {
 			toLab += "\nBest: " + totalTime.ToString("0.00") + " s";
 		}
@@ -109,8 +156,12 @@ public abstract class AbstractVehicle : MonoBehaviour {
 	}
 
 	// Whatever subclass has to initialize, this is the functin to do so
-	protected abstract void LocalStart();
+	protected virtual void LocalStart() {
+	}
 
+	// Whatever requirements the subclass needs
+	protected virtual void LocalRequirements() {
+	}
 
 	// Reads file and sets list of polygons
 	// Not a very smart function, just a lot of work to do
@@ -152,6 +203,33 @@ public abstract class AbstractVehicle : MonoBehaviour {
 
 		} finally {
 			sr.Close();		// Close stream
+		}
+	}
+
+	// Instantiates a new wall
+	private void CreateWall(Vector3 f, Vector3 s, GameObject wallParent) {
+		GameObject tmpWall = Instantiate(wall, (f + s) / 2,
+			Quaternion.identity) as GameObject;
+
+		// If the width is 0, set it to 1
+		float xlen = Mathf.Abs(f.x-s.x);
+		if (xlen < 1.0f) {
+			xlen = 1.0f;
+		}
+		float zlen = Mathf.Abs(f.z-s.z);
+		if (zlen < 1.0f) {
+			zlen = 1.0f;
+		}
+
+		tmpWall.transform.localScale = new Vector3(xlen, 5.0f, zlen);
+		tmpWall.SetActive(true);
+		tmpWall.transform.parent = wallParent.transform;
+	}
+
+	// Function for checking arguments
+	protected void require(bool predicate, string message) {
+		if (!predicate) {
+			throw new ArgumentException(message);
 		}
 	}
 }

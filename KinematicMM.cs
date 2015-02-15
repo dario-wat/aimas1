@@ -39,7 +39,7 @@ public class KinematicMM : AbstractVehicleWaypoint {
 		require(maxVelocity > 0.0f, "Max velocity must be greater than 0");
 
 		// Change size
-		transform.localScale = new Vector3(5.0f, 1.0f, 5.0f);
+		transform.localScale = new Vector3(3.0f, 3.0f, 3.0f);
 
 		// Create Visibility graph
 		GraphState graph;

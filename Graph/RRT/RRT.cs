@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System;
 using System.Linq;
 
@@ -12,7 +13,10 @@ using System.Linq;
 public class RRT<VState> where VState : class, IVehicleState<VState> {
 
 	// Number of iterations
-	private int K = 1000;
+	private int K = 100;
+
+	// Neighborhood size
+	private int M = 1;
 
 	// Initial and goal state
 	private VState initial;
@@ -23,7 +27,7 @@ public class RRT<VState> where VState : class, IVehicleState<VState> {
 
 	// List of polygonal obstacles, this should be modified at later stage
 	// to support other types of obstacles
-	private List<Polygon> obstacles;
+	private readonly List<Polygon> obstacles;
 
 	// Root node of the RRT, in other words, Node that wraps initial state
 	private Node root;
@@ -31,52 +35,148 @@ public class RRT<VState> where VState : class, IVehicleState<VState> {
 	// Goal node, used for tracing
 	private Node goalNode;
 
+	// Cost of the whole path
+	public float cost {
+		get { return goalNode.cost; }
+	}
+
+	// RRT Running time
+	public float runTime { get; private set; }
+
+	// Path with nodes
+	private List<Node> path;
+
 	// Path in RRT in terms of moves
-	public List<Move> moves { get; private set; }
+	public ReadOnlyCollection<Move> moves { get; private set; }
+
+	// Edges of the rrt graph
+	public ReadOnlyCollection<Edge> edges { get; private set; }
+
+	// All vertices in the graph
+	public ReadOnlyCollection<Vector3> vertices { get; private set; }
+
+	// Vertices that are used in moving the vehicle
+	public ReadOnlyCollection<Vector3> corners { get; private set; }
+
+	// Edges that make up the path
+	public ReadOnlyCollection<Edge> pathEdges { get; private set; }
 
 
 	// Constructor that initializes variables and runs RRT
 	public RRT(VState initial, VState goal, Func<VState> generate,
-		IEnumerable<Polygon> obstacles) {
+		IEnumerable<Polygon> obstacles, int K, int M) {
 		
 		this.initial = initial;
 		this.goal = goal;
 		this.generate = generate;
+		this.K = K;
+		this.M = M;
 		this.obstacles = new List<Polygon>(obstacles);
-		this.root = new Node(this.initial, null, null);
+		this.root = new Node(this.initial, null);
+		
+		float startTime = Time.realtimeSinceStartup;
 		rrt();
+		this.runTime = Time.realtimeSinceStartup - startTime;
 	}
 
+
 	// Runs RRT algorithm and finds "optimal" path
+	// Fills all necessary variables with data
+	// Vertices and edges
 	private void rrt() {
+		// Initialize some stuff
+		List<Node> nodes = new List<Node>();
+		nodes.Add(root);
+		List<Edge> edges = new List<Edge>();
+		List<Vector3> vertices = new List<Vector3>();
+		vertices.Add(initial.vec3);
+		
+		// Iterative exploring
 		for (int i = 0; i <= K; i++) {
+
 			// Generate random state
 			VState randomState = generate();
-			if (i == K) {		// In last step try to reach goal
+			if (i >= K) {		// In last step try to reach goal
 				randomState = goal;
 			}
+			Debug.Log(randomState);
+
+
+			bool goout = false;
+			foreach (Polygon p in obstacles) {
+				if (p.IsInside(randomState.vec2)) {
+					goout = true;
+					break;
+				}
+			}
+			if (goout) {
+				i--;
+				continue;
+			}
 			
-			// Find closest point
+			// Find closest points
+			FFFBHeap<Node> neighborhood = new FFFBHeap<Node>(M);
+			foreach (Node n in nodes) {
+				float distance = randomState.Distance(n.state);
+				neighborhood.Insert(distance, n);
+			}
+
+			
+			
+			// Check if its obstructed
+			Tuple<List<Move>, VState> moves = null;
 			Node nearest = null;
 			float minDist = float.MaxValue;
-			foreach (Node n in root.Iterate()) {
-				float distance = randomState.Distance(n.state);
-				if (distance < minDist) {
-					minDist = distance;
+			VState newState = null;
+			
+			foreach (Node n in neighborhood) {
+				//Debug.Log("From: " + n.state + "  To: " + randomState);
+				Tuple<List<Move>, VState> tMoves = n.state.MovesTo(randomState);
+				if (Move.Obstructed(tMoves._1, obstacles, n.state.vec3)) {
+					continue;
+				}
+				float distance = tMoves._2.Distance(n.state);
+				if (distance + n.cost < minDist) {
 					nearest = n;
+					minDist = distance + n.cost;
+					newState = tMoves._2;
+					moves = tMoves;
 				}
 			}
 
-			// TODO check here if i can reach that point (not go through obstacles)
-			List<Move> moves = randomState.MovesTo(nearest.state);
+			if (nearest == null) {
+				if (i >= K) {
+					return;
+				}
+				i--;		// It is obstructed, generate new point
+				continue;
+			}
+			//moves = nearest.state.MovesTo(randomState);
 
+			
+
+			// Aggregate cost
+			float moveCost = 0.0f;
+			foreach (Move m in moves._1) {
+				moveCost += m.t;
+			}
+
+			// TODO this is literally edge, a line with 2 points
+			// Should be changed later
+			edges.Add(new Edge(nearest.state.vec2, newState.vec2));
 
 			// At this point, nearest cannot be null because there is always
 			// at least one node in the tree whose distance is less than inf
 			// nearest is also reachable
-			nearest.Add(new Node(randomState, nearest, moves));
-			if (randomState.Equals(goal)) {
-				goalNode = nearest;
+			vertices.Add(newState.vec3);
+			nodes.Add(new Node(newState, nearest, moves._1,
+				nearest.cost + moveCost));
+
+			// TODO implement near		
+			if (newState.Equals(goal) || i >= K) {
+				this.goalNode = nodes[nodes.Count-1];
+				this.edges = edges.AsReadOnly();
+				this.vertices = vertices.AsReadOnly();
 				Trace();
 				return;
 			}
@@ -84,27 +184,43 @@ public class RRT<VState> where VState : class, IVehicleState<VState> {
 	}
 
 	// Traces path back from the goal to the root
+	// Sets moves and vertices that are used in moves
 	private void Trace() {
 		// Path does not exist
 		if (goalNode == null) {
 			this.moves = null;
+			this.corners = null;
 			return;
 		}
 
 		// Trace path
-		List<Node> path = new List<Node>();
+		List<Vector3> corners = new List<Vector3>();
+		this.path = new List<Node>();
 		Node x = goalNode;
 		while (x != null) {
-			path.Add(x);
+			this.path.Add(x);
+			corners.Add(x.state.vec3);
 			x = x.parent;
 		}
-		
-		// Add moves to the list
 		path.Reverse();
-		this.moves = new List<Move>();
-		foreach (Node n in path) {
-			this.moves.AddRange(n.moves);
+		this.corners = corners.AsReadOnly();
+
+		// Add edges between corners
+		List<Edge> pathEdges = new List<Edge>();
+		for (int i = 0; i < corners.Count-1; i++) {
+			pathEdges.Add(new Edge(
+				new Vector2(corners[i].x, corners[i].z),
+				new Vector2(corners[i+1].x, corners[i+1].z)
+			));
 		}
+		this.pathEdges = pathEdges.AsReadOnly();
+
+		// Add moves to the list
+		List<Move> moves = new List<Move>();
+		foreach (Node n in path) {
+			moves.AddRange(n.moves);
+		}
+		this.moves = moves.AsReadOnly();
 	}
 
 
@@ -125,22 +241,27 @@ public class RRT<VState> where VState : class, IVehicleState<VState> {
 		// from its parent's state
 		public readonly List<Move> moves;
 
+		// The cost to get to this node from initial nodes
+		public float cost = 0.0f;
+
 
 		// Initialize node and create empty children list
-		public Node(VState state, Node parent, IEnumerable<Move> moves) {
+		public Node(VState state, Node parent,
+			IEnumerable<Move> moves, float cost) {
+			
 			this.state = state;
-			this.children = new List<Node>();
+			this.children = new List<Node>();	// Currently not used
 			this.parent = parent;
 			this.moves = new List<Move>(moves);
+			this.cost = cost;
 		}
 
 		// Constructor without moves, sets moves to empty list
 		public Node(VState state, Node parent)
-			: this(state, parent, new List<Move>()) {
+			: this(state, parent, new List<Move>(), 0.0f) {
 		}
 
 		// Add node to the list of child nodes
-		// Sets the parent to this node
 		public void Add(Node n) {
 			children.Add(n);
 		}
@@ -153,6 +274,17 @@ public class RRT<VState> where VState : class, IVehicleState<VState> {
 				sequence = Enumerable.Concat(sequence, n.Iterate());
 			}
 			return sequence;
+		}
+
+		public readonly static IComparer<Node> costComp = new CostComparer();
+
+		// Comparer for inserting sorted
+		private class CostComparer : IComparer<Node> {
+
+			// Compares cost as both g and h
+			public int Compare(Node o1, Node o2) {
+				return (int) (o1.cost - o2.cost);
+			}
 		}
 	}
 }
