@@ -8,6 +8,7 @@ public class KinematicCarRRT : AbstractVehicle {
 	public float maxVel;
 	public float maxPhi;
 	public float L;
+	public string heuristic;
 
 	// VState of start and goal
 	private KinematicCarState startState;
@@ -30,6 +31,7 @@ public class KinematicCarRRT : AbstractVehicle {
 		require(maxVel > 0, "Maximum velocity must be greater than 0");
 		require(maxPhi > 0, "Maximu wheel angle must be greater than 0");
 		require(L > 0, "Car length must be greater than 0");
+		require(!string.IsNullOrEmpty(heuristic), "Heuristic must be set");
 	}
 
 	// Initializes and runs rrt
@@ -40,6 +42,7 @@ public class KinematicCarRRT : AbstractVehicle {
 		KinematicCarState.L = L;
 		KinematicCarState.lo = lowLimitRRT;
 		KinematicCarState.hi = highLimitRRT;
+		KinematicCarState.heuristic = heuristic;
 		
 		// Set scale and rotate to right
 		transform.localScale = new Vector3(1, 1, L);

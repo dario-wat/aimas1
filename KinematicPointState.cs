@@ -41,10 +41,9 @@ public class KinematicPointState : IVehicleState<KinematicPointState> {
 		return EuclideanDistance(other) / maxVel; 
 	}
 
+	// Euclidean distance between 
 	private float EuclideanDistance(KinematicPointState other) {
-		float x = this.x - other.x;
-		float y = this.y - other.y;
-		return Mathf.Sqrt(x*x + y*y);
+		return Vector2.Distance(this.vec2, other.vec2);
 	}
 
 	// Creates a lit of moves (which is in this case only one move).
@@ -52,17 +51,13 @@ public class KinematicPointState : IVehicleState<KinematicPointState> {
 	public Tuple<List<Move>, KinematicPointState> MovesTo(
 		KinematicPointState other) {
 		
-		List<Move> moves = new List<Move>();
 		float distance = this.EuclideanDistance(other);
 		float t = distance / maxVel;			// How long to move
+		Vector2 vel = (other.vec2 - this.vec2).normalized * maxVel;
 		
-		Vector2 vel = other.vec2 - this.vec2;
-		vel.Normalize();
-		vel *= maxVel;
-		float dx = vel.x;								// Normalized direction
-		float dy = vel.y;
-		
-		moves.Add(new KinematicPointMove(new Vector3(dx, 0, dy).normalized, maxVel, t));
+		// Giving a real velocity vector, not normalized
+		List<Move> moves = new List<Move>();
+		moves.Add(new KinematicPointMove(new Vector3(vel.x, 0, vel.y), t));
 		return new Tuple<List<Move>, KinematicPointState>(moves, other);
 	}
 

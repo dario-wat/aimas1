@@ -6,28 +6,24 @@ using System.Collections.Generic;
 */
 public class KinematicPointMove : Move {
 
-	Vector3 velocity;
-	float speed;
-	override public float t { get; private set; }
+	// Point velocity
+	private Vector3 velocity;
 
-	public KinematicPointMove(Vector3 velocity, float speed, float t) {
-		this.velocity = velocity.normalized;
-		this.speed = speed;
-		this.t = t;
+
+	// Nothing special to see
+	public KinematicPointMove(Vector3 velocity, float t) : base(t) {
+		this.velocity = velocity;
 	}
 
-	override public float MoveMe(Transform transform, float dt) {
-		// Time used for transforming the vehicle
-		float time = Mathf.Min(dt, t);
-
-		// Translate
-		transform.Translate(velocity * speed * time, Space.World);
-
-		t -= time;
-		return dt - time;
+	// Just translate the point with given velocity and time
+	override protected void MoveTransform(Transform transform, float time) {
+		transform.Translate(velocity * time, Space.World);
 	}
 
-	override protected bool Obstructed(IEnumerable<Polygon> polys, Vector3 startPos) {
+	// Check is obstructed, checks line intersection with polygons
+	override protected bool Obstructed(
+		IEnumerable<Polygon> polys, Vector3 startPos) {
+		
 		Vector3 newPoint = this.PredictPosition(startPos);
 		Vector2 sp = new Vector2(startPos.x, startPos.z);
 		Vector2 np = new Vector2(newPoint.x, newPoint.z);
@@ -41,7 +37,18 @@ public class KinematicPointMove : Move {
 		return false;
 	}
 
+	// Predicting position, simple
 	override protected Vector3 PredictPosition(Vector3 pos) {
-		return pos + velocity * speed * t;
+		return pos + velocity * t;
+	}
+
+	// Create a copy
+	override public Move Copy() {
+		return new KinematicPointMove(velocity, t);
+	}
+
+	// For debugging
+	override public string ToString() {
+		return string.Format("Velocity: {0}, t: {1}", velocity, t);
 	}
 }

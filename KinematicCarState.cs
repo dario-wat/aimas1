@@ -14,6 +14,13 @@ public class KinematicCarState : IVehicleState<KinematicCarState> {
 	public static float L;
 	public static float r;  //TODO: calculate this
 	public static float w;
+	public static string heuristic;
+
+	private static string dubinH = "Dubin";
+	private static string euclH = "Eucl";
+	private static string distH = "Distance";
+	private static string upperH = "Upper";
+
 	float toRad = (Mathf.PI/180);
 	float toDeg = (180/Mathf.PI);
 
@@ -58,44 +65,48 @@ public class KinematicCarState : IVehicleState<KinematicCarState> {
 		KinematicCarState.r = maxVel / w;
 		//Debug.Log ("angvel: "+w);
 		//Debug.Log ("r: "+r);
-
-
 	}
 	
 	// Dubin curve distance
 	public float Distance(KinematicCarState other) {
-		return Vector2.Distance(this.vec2, other.vec2) / maxVel;
-			//+	Vector3.Angle(this.orientation, other.orientation) / w;
-		List<Move> moves = MovesTo (other)._1;
-		float total = 0;
-		foreach (Move m in moves ){
-			total += m.t;
+		if (heuristic.Equals(upperH)) {
+			return (Vector2.Distance(this.vec2, other.vec2)
+				+ 2*r + 3*Mathf.PI*r)/maxVel;
 		}
-		return total;
+		if (heuristic.Equals(euclH)) {
+			return Vector2.Distance(this.vec2, other.vec2) / maxVel;
+		}
+		if (heuristic.Equals(dubinH)) {
+			List<Move> moves = MovesTo (other)._1;
+			float total = 0;
+			foreach (Move m in moves) {
+				total += m.t;
+			}
+			return total;
+		}
+		if (heuristic.Equals(distH)) {
+			return Vector3.Distance(this.position, other.position) /maxVel
+				+ 0.5f*Vector3.Angle(this.velocity, other.velocity) / (w*toDeg);
+		}
+		return 0;
 	}
 	
 	// Creates a list of moves.
 	/* Returns the shortest set of moves between two kinematic car states. */
 	public Tuple<List<Move>, KinematicCarState> MovesTo(KinematicCarState other) {
-		//Debug.Log("In moves to");
-		//Debug.Log ("Orientation: " + orientation);
 		Vector3 initial = this.position;
 		Vector3 final = other.position;
 		Vector3 veli = this.velocity;
-		//Debug.Log ("velocity:" + this.velocity);
 		Vector3 velf = other.velocity;
 		
 		Vector3 rci1 = r*(Quaternion.Euler (0, 90, 0) * veli).normalized;
-		//Debug.Log ("rci1: " + rci1);
 
 		Vector3 rci2 = -rci1;
 		Vector3 rcf1 = r*(Quaternion.Euler (0, 90, 0) * velf).normalized;
 		Vector3 rcf2 = -rcf1;
-		//Debug.Log ("rci2: " + rci2);
 		
 		/* find the shortest set of moves using the four circles*/
 		List<List<Move>> moves = new List<List<Move>>();
-		//Debug.Log ("rci1: " + rci1+ ", to rcf1: "+rcf1);
 		moves.Add(getShortestMovesBetween (initial, veli, final, velf, rci1, rcf1));
 		moves.Add(getShortestMovesBetween (initial, veli, final, velf, rci1, rcf2));
 		moves.Add(getShortestMovesBetween (initial, veli, final, velf, rci2, rcf1));
@@ -115,11 +126,6 @@ public class KinematicCarState : IVehicleState<KinematicCarState> {
 				shortestPath = m;
 			}
 		}
-//		foreach (Move m in shortestPath) {
-			//Debug.Log ("max vel: "+maxVel);
-			//Debug.Log (m.ToString());
-//		}
-		//Debug.Log("Out moves to");
 		return new Tuple<List<Move>, KinematicCarState>(shortestPath, other);
 	}
 
@@ -130,54 +136,31 @@ public class KinematicCarState : IVehicleState<KinematicCarState> {
 		Vector3 di = Vector3.Cross (veli, rci);
 		Vector3 df = Vector3.Cross (velf, rcf);
 
-		//Debug.Log ("center1: " + center1 + ", center2: " + center2);
 		/*If the circles intersect there exist no crossing tangents*/
 		if (Vector3.Dot (di, df) < 1 && (center2-center1).magnitude < 2 * r) {
 			return new List<Move>();
 		}
 		/*Find the tangentpoints */
 		
-		//Debug.Log ("r: " + r);
-		Vector3[] tangentPoints = (Vector3.Dot(di, df) > 1) ? parallelTangentPoints(center1, center2, r) 
-															: intersectingTangentPoints(center1, center2, r);
-		if (Vector3.Dot (di, df) > 1) {
-			//Debug.Log ("parallel");
-		} else {
-			//Debug.Log ("crossing");
-		}
+		Vector3[] tangentPoints = (Vector3.Dot(di, df) > 1) ? Tangents.parallelTangentPoints(center1, center2, r) 
+															: Tangents.intersectingTangentPoints(center1, center2, r);
+		
 
 
 		/* the angles and paths for the two tangents*/
-		float sa1 = RotationAngle( -rci, tangentPoints[0] - center1);
+		float sa1 = Tangents.RotationAngle( -rci, tangentPoints[0] - center1);
 		Vector3 straight1 = tangentPoints [1] - tangentPoints [0];
 		float s1 = (straight1).magnitude;
-		float ea1 = RotationAngle ( tangentPoints [1] - center2, -rcf);
+		float ea1 = Tangents.RotationAngle ( tangentPoints [1] - center2, -rcf);
 		float l1 = Mathf.Abs(sa1) + s1 + Mathf.Abs(ea1);
-		/*
-		Debug.Log ("tangent0: " + (tangentPoints [0]) );
-		Debug.Log ("tangent0: " + (tangentPoints [0]- center1) +", -rci: " +(-rci));
-		Debug.Log ("tangent1: " + (tangentPoints [1]- center2) +", -rcf: " +(-rcf));
 
-		Debug.Log("sa1: " + sa1);
-		Debug.Log("ea1: " + ea1);
-		Debug.Log("s1: " + s1);
-		Debug.Log("w: " + w);
-*/
-		float sa2 = RotationAngle(-rci, tangentPoints[2] - center1);
+		float sa2 = Tangents.RotationAngle(-rci, tangentPoints[2] - center1);
 		Vector3 straight2 = tangentPoints [3] - tangentPoints [2];
 		float s2 = (straight2).magnitude;
-		float ea2 = RotationAngle (tangentPoints [3] - center2, -rcf);
+		float ea2 = Tangents.RotationAngle (tangentPoints [3] - center2, -rcf);
 		float l2 = Mathf.Abs(sa2) + s2 + Mathf.Abs(ea2);
 
-		/*Debug.Log (RotationAngle (new Vector3(0,0,1),new Vector3(-1,0,1)));
-		Debug.Log (di.y);
-		Debug.Log ("tangent2: " + (tangentPoints [2]- center1) +", -rci: " +(-rci));
-		Debug.Log ("tangent3: " + (tangentPoints [3]- center2) +", -rcf: " +(-rcf));
 
-		Debug.Log("sa2: " + sa2);
-		Debug.Log("ea2: " + ea2);
-		Debug.Log("s2: " + s2);
-*/
 		/*Assign our path the shorter one*/
 		float sa, s, ea;
 		Vector3 straight;
@@ -201,58 +184,6 @@ public class KinematicCarState : IVehicleState<KinematicCarState> {
 
 		return moves;
 	}
-
-	private float RotationAngle(Vector3 from, Vector3 to) {
-		// Very important condition,  
-		//assert(to.y == 0.0f && from.y == 0.0f);
-		
-		// Cross product to find out if I have to back up or go forward
-		float angle = Vector3.Angle(from, to);          // Angle between
-		
-		Vector3 cross = Vector3.Cross(from, to);        // Cross product
-		if (angle == 180.0f) {          // To make sure that it turns if it's 180
-			cross.y = 1.0f;
-		}
-		return Mathf.Sign(cross.y) * angle;
-	}
-	
-	
-	/* Returns the parallel tangent points on two circles with radius r centered at c1 and c2 */
-	private Vector3 [] parallelTangentPoints(Vector3 c1, Vector3 c2, float r) {
-		Vector3 centerLine = c2 - c1;
-		Vector3 normal = (Quaternion.Euler (0, 90, 0) * centerLine).normalized;
-		Vector3 s1 = c1 + r * normal;
-		Vector3 s2 = c1 - r * normal;
-		Vector3 e1 = c2 + r * normal;
-		Vector3 e2 = c2 - r * normal;
-		Vector3[] returnValues = {s1,e1,s2,e2};
-		return returnValues;
-	}
-	
-	/* Returns the intersecting tangent points on two circles with radius r centered at c1 and c2 */
-	private Vector3 [] intersectingTangentPoints(Vector3 c1, Vector3 c2, float r) {
-		Vector3 centerLine = c2 - c1;
-		float d = 0.5f * centerLine.magnitude;
-		float l = Mathf.Sqrt (d*d - r*r);
-
-		float v = Mathf.Atan (l / r);
-		v = v * 180 / Mathf.PI;
-		//Debug.Log (v);
-		//Debug.Log (Quaternion.Euler (0, v, 0));
-		Vector3 shift1 = r * (Quaternion.Euler (0, v, 0) * centerLine.normalized) ;
-		Vector3 shift2 = r *  (Quaternion.Euler (0, -v, 0) * centerLine.normalized) ;
-
-		//Debug.Log ("---------"+ shift1+"----------");
-		//Debug.Log (centerLine + ", "+Quaternion.Euler (0, v, 0) * centerLine + ", " + Quaternion.Euler (0, -v, 0) * centerLine);
-		
-		Vector3 s1 = c1 + shift1;
-		Vector3 s2 = c1 + shift2;
-		Vector3 e1 = c2 - shift1;
-		Vector3 e2 = c2 - shift2;
-		
-		Vector3[] returnValues = {s1,e1,s2,e2};
-		return returnValues;
-	}
 	
 	// Overriding object's Equals
 	override public bool Equals(object other) {
@@ -261,6 +192,12 @@ public class KinematicCarState : IVehicleState<KinematicCarState> {
 		}
 		KinematicCarState o = other as KinematicCarState;
 		return this.x.Equals(o.x) && this.y.Equals(o.y);
+	}
+
+	// Compiler complaining
+	override public int GetHashCode() {
+		return x.GetHashCode() + 31 * y.GetHashCode()
+			+ 31 * 31 * orientation.GetHashCode();
 	}
 	
 	// For debugging
