@@ -42,8 +42,7 @@ public class DynamicPointMove : Move {
 
 	// Simple physics
 	override protected Vector3 PredictPosition(Vector3 pos) {
-		return pos + velocity * t
-				+ 0.5f * acceleration * t * t;
+		return pos + velocity * t + 0.5f * acceleration * t * t;
 	}
 
 	// Copy right, not really needed

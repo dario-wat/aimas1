@@ -11,9 +11,6 @@ public class DynamicPointState : IVehicleState<DynamicPointState> {
 	// Maximum acceleration
 	public static float maxAcc = 1.0f;
 
-	// Number of points to use for collision detecting
-	public static int collisionPoints = 3;
-
 	// Heuristic for moving
 	public static string heuristic;
 
@@ -88,10 +85,10 @@ public class DynamicPointState : IVehicleState<DynamicPointState> {
 
 		// This stops the car, I have no idea if it really is working
 		// **** Move out if bad results
-		float dist = Vector2.Distance(this.vec2, goalState.vec2);
-		if (dist < 0.5f * velocity.magnitude * velocity.magnitude / maxAcc) {
-			acc = - (velocity.normalized * maxAcc);
-		}
+		//float dist = Vector2.Distance(this.vec2, goalState.vec2);
+		//if (dist < 0.5f * velocity.magnitude * velocity.magnitude / maxAcc) {
+		//	acc = - (velocity.normalized * maxAcc);
+		//}
 
 		Vector3 newPos = this.vec3 + velocity * t + 0.5f * acc * t * t;
 		Vector3 newVel = velocity + acc * t;
@@ -107,8 +104,15 @@ public class DynamicPointState : IVehicleState<DynamicPointState> {
 			+ velocity.z.ToString("0.00"); 
 	}
 
+	
+
 	// State generator
 	public static DynamicPointState GenerateRandom() {
+		//rcounter++;
+		//if (rcounter % 500 == 0) {		// Every k-th call return goal state
+		//	return goalState;
+		//}
+
 		float x = UnityEngine.Random.Range(lo, hi);
 		float y = UnityEngine.Random.Range(lo, hi);
 
@@ -117,4 +121,7 @@ public class DynamicPointState : IVehicleState<DynamicPointState> {
 		float dy = UnityEngine.Random.Range(-maxAcc*10, maxAcc*10);
 		return new DynamicPointState(x, y, new Vector3(dx, 0, dy));
 	}
+
+	// Counts GenerateRandom calls
+	//private static int rcounter = 0;
 }

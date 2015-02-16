@@ -2,20 +2,19 @@
 using System.Collections.Generic;
 using System.Linq;
 
-public class KinematicCarRRT : AbstractVehicle {
+public class DynamicCarRRT : AbstractVehicle {
 
 	// Kinematic car parameters
-	public float maxVel;
+	public float maxAcc;
 	public float maxPhi;
 	public float L;
-	public string heuristic;
 
 	// VState of start and goal
-	private KinematicCarState startState;
-	private KinematicCarState goalState;
+	private DynamicCarState startState;
+	private DynamicCarState goalState;
 
 	// RRT
-	private RRT<KinematicCarState> rrt;
+	private RRT<DynamicCarState> rrt;
 
 	// RRT data needed for base class
 	override protected Stack<Move> moves { get; set; }
@@ -28,37 +27,35 @@ public class KinematicCarRRT : AbstractVehicle {
 
 	// Requirements for kinematic car parameters
 	override protected void LocalRequirements() {
-		require(maxVel > 0, "Maximum velocity must be greater than 0");
+		require(maxAcc > 0, "Maximum acceleration must be greater than 0");
 		require(maxPhi > 0, "Maximu wheel angle must be greater than 0");
 		require(L > 0, "Car length must be greater than 0");
-		require(!string.IsNullOrEmpty(heuristic), "Heuristic must be set");
 	}
 
 	// Initializes and runs rrt
 	override protected void LocalStart() {
 		// Setting state options
-		KinematicCarState.maxVel = maxVel;
-		KinematicCarState.maxPhi = maxPhi;
-		KinematicCarState.L = L;
-		KinematicCarState.lo = lowLimitRRT;
-		KinematicCarState.hi = highLimitRRT;
-		KinematicCarState.heuristic = heuristic;
+		DynamicCarState.maxAcc = maxAcc;
+		DynamicCarState.maxPhi = maxPhi;
+		DynamicCarState.L = L;
+		DynamicCarState.r = L / Mathf.Tan(maxPhi * Mathf.PI / 180);
+		DynamicCarState.lo = lowLimitRRT;
+		DynamicCarState.hi = highLimitRRT;
+		DynamicCarState.timeStep = 0.2f;
 		
 		// Set scale and rotate to right
 		transform.localScale = new Vector3(1, 1, L);
 		transform.rotation = Quaternion.Euler(0, 90, 0);
 
 		// Create states, rotation is right
-		startState = new KinematicCarState(
-			startPos.x, startPos.y, Vector3.right);
-		goalState = new KinematicCarState(
-			goalPos.x, goalPos.y, Vector3.right);
+		startState = new DynamicCarState(startPos.x, startPos.y, Vector3.right, 0);
+		goalState = new DynamicCarState(goalPos.x, goalPos.y, Vector3.right, 0);
 		
 		// Run rrt
-		rrt = new RRT<KinematicCarState>(
+		rrt = new RRT<DynamicCarState>(
 			startState,
 			goalState,
-			KinematicCarState.GenerateRandom,
+			DynamicCarState.GenerateRandom,
 			polys,
 			iterations,
 			neighborhood
@@ -68,15 +65,20 @@ public class KinematicCarRRT : AbstractVehicle {
 		moves = new Stack<Move>(Enumerable.Reverse(rrt.moves));
 		cost = rrt.cost;
 		rrtTime = rrt.runTime;
-		Debug.Log("Time: " + cost + "  RRT: " + rrtTime);
 
+/*		transform.position = new Vector3(10, 0, 10);
+		moves = new Stack<Move>(new Move[] {
+			new DynamicCarMove(Vector3.right, 5, -1, -1, 30)
+		});
+*/
 		// This part generates points for realistic path
 		GameObject tmp = new GameObject();
 		Transform tr = tmp.transform;
 		tr.position = transform.position;
 		tr.rotation = transform.rotation;
-		List<Move> tmpMoves = new List<Move>();
-		foreach (Move m in rrt.moves) {
+		//List<Move> tmpMoves = new List<Move>();
+		/*foreach (Move m in rrt.moves) {
+			print(m);
 			tmpMoves.Add(m.Copy());
 		}
 		foreach (Move m in tmpMoves) {
@@ -85,6 +87,7 @@ public class KinematicCarRRT : AbstractVehicle {
 				poss.Add(tr.position);
 			}
 		}
+		*/
 		Destroy(tmp);
 	}
 

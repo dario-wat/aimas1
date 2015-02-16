@@ -13,9 +13,6 @@ public class DynamicPointRRT : AbstractVehicle {
 	// Parameter for heuristic
 	public float hParam;
 
-	// How many points to use for collision detecting
-	public int collisionPoints;
-
 	// VState of start and goal
 	private DynamicPointState startState;
 	private DynamicPointState goalState;
@@ -37,7 +34,6 @@ public class DynamicPointRRT : AbstractVehicle {
 		DynamicPointState.maxAcc = maxAcceleration;
 		DynamicPointState.heuristic = heuristic;
 		DynamicPointState.hParam = hParam;
-		DynamicPointState.collisionPoints = collisionPoints;
 
 		// Set states with zero initial velocity and run rrt
 		startState = new DynamicPointState(
@@ -69,13 +65,15 @@ public class DynamicPointRRT : AbstractVehicle {
 		);
 
 		// Set times
-		cost = rrt.cost + lastTime;
+		cost = rrt.cost + lastTime - last.t;
 		rrtTime = rrt.runTime;
+		Debug.Log("Time: " + cost + "  RRT: " + rrtTime);
 	}
 
 	// Draws all nice gizmos and shit
 	// Can be easily disabled by clicking on Gizmos icon in the scene window
-	void OnDrawGizmos() {
+	new void OnDrawGizmos() {
+		base.OnDrawGizmos();
 		if (rrt != null) {
 			// Draw edges
 			if (gizmosEdges) {

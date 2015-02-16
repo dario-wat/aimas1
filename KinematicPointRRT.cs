@@ -49,6 +49,7 @@ public class KinematicPointRRT : AbstractVehicle {
 		// Set cost and init time which will be printed to screen later
 		cost = rrt.cost;
 		rrtTime = rrt.runTime;
+		Debug.Log("Time: " + cost + "  RRT: " + rrtTime);
 	}
 
 	// Check requirements
@@ -58,7 +59,8 @@ public class KinematicPointRRT : AbstractVehicle {
 
 	// Draws all nice gizmos and shit
 	// Can be easily disabled by clicking on Gizmos icon in the scene window
-	void OnDrawGizmos() {
+	new void OnDrawGizmos() {
+		base.OnDrawGizmos();
 		if (rrt != null) {
 			// Draw edges
 			if (gizmosEdges) {

@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 
-public class KinematicCarMove : Move {
+public class DynamicCarMove : Move {
 
 	// Angular velocity
 	private float omega;
@@ -12,6 +12,11 @@ public class KinematicCarMove : Move {
 	// Speed, can be negative when moving backwards
 	private float speed;
 
+	// Acceleration, negative for deccelerating
+	private float acceleration;
+
+	private int turn;
+
 	// Rotation radius
 	private float r;
 
@@ -19,18 +24,22 @@ public class KinematicCarMove : Move {
 	private Vector3 centerOff;
 
 
-	public KinematicCarMove(Vector3 velocity, float speed, float omega,
-		float t) : base(t) {
+	// Computes radius of the moving circle and center offset
+	public DynamicCarMove(Vector3 velocity, float speed, float acceleration,
+		float turn, float t) : base(t) {
 		
 		this.velocity = velocity.normalized;
 		this.speed = speed;
-		this.omega = Mathf.Sign(speed) * omega;
-		this.r = Mathf.Abs(speed) / (Mathf.Abs(omega) * Mathf.PI / 180.0f);
+		this.acceleration = acceleration;
+		this.r = DynamicCarState.radius;
+		this.turn = (int) Mathf.Sign(turn);
+		this.omega = Mathf.Sign(speed) * turn * speed / r;
+		//Debug.Log("created");
 
 		// Setting centerOff
-		if (omega != 0) {
+		if (turn != 0) {
 			Vector3 normal;
-			if (omega < 0) {	// Turning in left circle
+			if (turn < 0) {	// Turning in left circle
 				normal = Quaternion.Euler(0, -90, 0) * velocity;
 			} else {			// Turning in right circle
 				normal = Quaternion.Euler(0, 90, 0) * velocity;
@@ -44,9 +53,11 @@ public class KinematicCarMove : Move {
 		// Translate and rotate
 		transform.Translate(velocity * speed * time, Space.World);
 		transform.RotateAround(transform.position, yAxis, omega * time);
-		
+
 		// Compute new velocity
 		velocity = Quaternion.Euler(0, omega * time, 0) * velocity;
+		speed += acceleration * time;
+		omega = turn * speed / r * 180 / Mathf.PI;
 	}
 
 	// Obstructions, must check line and arc intersection
@@ -57,36 +68,11 @@ public class KinematicCarMove : Move {
 		Vector2 sp = new Vector2(startPos.x, startPos.z);
 		Vector2 np = new Vector2(newPoint.x, newPoint.z);
 
-		if (omega == 0.0f) {		// Check straight line intersection
-			Edge e = new Edge(sp, np);
-			foreach (Polygon p in polys) {
-				if (p.Intersects(e)) {
-					return true;
-				}
-			}
-		} else {				// Check arc intersection
-			// Center of turning circle
-			Vector3 center = startPos + centerOff;
-			Vector2 cp = new Vector2(center.x, center.z);
-			Vector2 cenToS = sp - cp;
-			Vector2 cenToN = np - cp;
-
-			// Angles of the arc
-			float a1, a2;
-			if (omega < 0) {
-				a1 = Arc.Angle(Vector2.right, cenToS);
-				a2 = Arc.Angle(Vector2.right, cenToN);
-			} else {
-				a1 = Arc.Angle(Vector2.right, cenToN);
-				a2 = Arc.Angle(Vector2.right, cenToS);
-			}
-			
-			// Check if arc intersects with any of the polygons
-			Arc arc = new Arc(cp, r, a1, a2);
-			foreach (Polygon p in polys) {
-				if (p.Intersects(arc)) {
-					return true;
-				}
+		// Check line - polygon intersection
+		Edge e = new Edge(sp, np);
+		foreach (Polygon p in polys) {
+			if (p.Intersects(e)) {
+				return true;
 			}
 		}
 		return false;
@@ -94,26 +80,29 @@ public class KinematicCarMove : Move {
 
 	// Predict the point, depends if its arc or line
 	override protected Vector3 PredictPosition(Vector3 pos) {
-		if (omega == 0) {
-			return pos + velocity * speed * t;
+		// TODO this if maybe unnecessary
+		if (turn == 0) {
+			return pos + velocity * speed * t
+				+ 0.5f * velocity * acceleration * t * t;
 		}
 
 		Vector3 center = pos + centerOff;
-		float angle = omega * t;
+		float endSpeed = speed + acceleration * t;
+		float angle = (speed + endSpeed) / (2 * r) * t;
 		Vector3 endVector = - (Quaternion.Euler(0, angle, 0) * centerOff);
+		Debug.Log(ToString() + " " + pos + " " + (center + endVector));
 		return center + endVector;
 	}
 
 	// Creates a copy
 	override public Move Copy() {
-		return new KinematicCarMove(velocity, speed,
-			Mathf.Sign(speed) * omega, t);
+		return new DynamicCarMove(velocity, speed, acceleration, turn, t);
 	}
 
 	// For debugging
 	override public string ToString() {
-		return string.Format(
-			"Velocity: {0}, Speed: {1}, Omega: {2}, t: {3}, Left: {4}, r: {5}",
-			velocity, speed, Mathf.Sign(speed) * omega, t, omega < 0, r);
+		return string.Format("Velocity: {0}, Speed: {1}, Acceleration {2}"
+			+ " Turn: {3}, t: {4}, r: {5}",
+			velocity, speed, acceleration, turn, t, r);
 	}
 }

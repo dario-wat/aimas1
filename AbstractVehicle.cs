@@ -237,4 +237,11 @@ public abstract class AbstractVehicle : MonoBehaviour {
 			throw new ArgumentException(message);
 		}
 	}
+
+	// Draws start and goal point
+	protected void OnDrawGizmos() {
+		Gizmos.color = Color.blue;
+		Gizmos.DrawSphere(new Vector3(startPos.x, 0, startPos.y), 1);
+		Gizmos.DrawSphere(new Vector3(goalPos.x, 0, goalPos.y), 1);
+	}
 }
