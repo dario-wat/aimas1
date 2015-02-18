@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
-using System.Collections.Generic;
+using System.Collections.Generic;	
 
 
 public class DynamicCarState : IVehicleState<DynamicCarState> {
@@ -44,10 +44,7 @@ public class DynamicCarState : IVehicleState<DynamicCarState> {
 	public Vector3 velocity {
 		get { return speed * (orientation.normalized); }
 	}
-	
-	public static float radius {
-		get { return r; }
-	}
+
 	
 	
 	// Constructor to set position
@@ -56,178 +53,85 @@ public class DynamicCarState : IVehicleState<DynamicCarState> {
 		this.y = y;
 		orientation.y = 0.0f;
 		this.orientation = orientation.normalized;
-		
-		w = speed / r;
-		//w = L / Mathf.Tan (maxPhi * toRad);
+		////Debug.Log ("phi:" + (maxPhi*toRad));
+		w = speed * Mathf.Tan(maxPhi*toRad) / L;
+		w = L / Mathf.Tan (maxPhi * toRad);
+//		//Debug.Log ("w: "+ w);
 
-		
 		this.speed = speed;
+		////Debug.Log ("angvel: "+w);
+		////Debug.Log ("r: "+r);
 	}
 
 	// Dubin curve distance
 	public float Distance(DynamicCarState other) {
-		//return Vector2.Distance(this.vec2, other.vec2);
-		return Vector2.Distance(this.position, other.position); //+ 0.5f*Vector3.Angle(this.velocity, other.velocity);
+		//float rotAngle = Tangents.RotationAngle (orientation, other.position - this.position);
+		//float phi = Mathf.Sign (rotAngle) * Mathf.Min (Mathf.Abs (rotAngle), maxPhi);
+		//float r = L / Mathf.Tan (Mathf.Abs(phi) * toRad);
+
+
+
+		return Vector2.Distance(this.vec2, other.vec2) / (speed + 0.01f);
+			 //+ 0.25f*Vector3.Angle(this.velocity, other.velocity);
 	}
 
 	// Creates a list of moves.
 	/* Returns the shortest set of moves between two kinematic car states. */
 	public Tuple<List<Move>, DynamicCarState> MovesTo(DynamicCarState other) {
 
-		List<Move> moves = new List<Move>();
+		List<Move> moves = new List<Move> ();
 		// create the move
 		//float dr = Tangents.RotationAngle (orientation, other.position - this.position);
 		float time = timeStep;
-		float acc = (speed < other.speed ? maxAcc : -maxAcc) * Mathf.Min (maxAcc, Mathf.Abs(this.speed - other.speed) / time);
-		
+		// Sign of the acceleration determined by the difference in velocities
+		// magnitude of acceleration is either maxAcc or the value needed to accelerate to reach the target speed.
+		float acc = (speed < other.speed ? 1 : -1) * Mathf.Min (maxAcc, Mathf.Abs (this.speed - other.speed) / time);
+		////Debug.Log ("acc:" + acc);
+		// The angle from current orientation to the destination is used to determine how much and in which direction the car should steer.
 		float rotAngle = Tangents.RotationAngle (orientation, other.position - this.position);
+		// The sign of the steering  * maximum or sufficient steering angle. 
+		float phi = Mathf.Sign (rotAngle) * Mathf.Min (Mathf.Abs (rotAngle), maxPhi);
+		// turning radius determined and used to calculate the angular velocity
+		float r = L / Mathf.Tan (Mathf.Abs(phi) * toRad);
+
+
+		// Find the new state:
+		DynamicCarState newState;
+		float endSpeed = speed + acc * time;
+		float angle = ((speed + endSpeed) / (2 * r)) * time * toDeg;
 		
-		float W = Mathf.Sign(rotAngle) * Mathf.Min (w, Mathf.Abs(rotAngle)*toRad/time);
+		Vector3 carToCenter = r * (Quaternion.Euler (0, 90 * Mathf.Sign (phi), 0) * orientation).normalized;
+		Vector3 centerToCar = - carToCenter;
+		Vector3 center = position + carToCenter;
+		Vector3 newPosition = Quaternion.Euler (0, angle * Mathf.Sign(phi), 0) * centerToCar + center;
+		Vector3 newOrientation = Quaternion.Euler (0, angle * Mathf.Sign(phi), 0) * orientation;
 		
-		Move move = new DynamicCarMove( orientation, speed, acc, W, time ) ;
+		
+		newState = new DynamicCarState (newPosition.x, 
+		                                newPosition.z, 
+		                                newOrientation, 
+		                                speed + acc * time);
+		
+		////Debug.Log ("pos: " + newState.position);
+		//Debug.Log ("Moving from: "+position+", or: "+orientation+"speed: "+speed+ 
+//		           "\nTowards: "+other.position+", or: "+other.orientation+"speed: "+other.speed+
+//		           "\nphi: " + phi + ", r: "+r+", angle: "+angle+", acc: "+acc+
+//		           "\nnew state: "+newState.position + ", or: "+newState.orientation+", speed"+newState.speed);
+		//		//Debug.Log (speed + acc * time);
+
+
+
+		Move move = new DynamicCarMove (orientation, speed, acc, phi, r, newState, time);
 		moves.Add (move);
 
 
-		float r = speed / W;
-		float rot = time * W * toDeg;
-		// Find the new state:
-		DynamicCarState newState;
-		if (r >= 1) {
-			Vector3 centerToPos = - r * (Quaternion.Euler (0, 90 * Mathf.Sign (W), 0) * orientation).normalized;
 
-			Vector3 newPosition = Quaternion.Euler (0, rot, 0) * centerToPos;
-			Vector3 newOrientation = Quaternion.Euler (0, rot, 0) * orientation;
-			newState = new DynamicCarState(newPosition.x, 
-			                               newPosition.z, 
-			                               newOrientation, 
-			                               speed + acc*time);
 
-		} else {
-			newState = new DynamicCarState(position.x, 
-			                               position.z, 
-			                               orientation, 
-			                               speed + acc*time);
-		}
-
-		return new Tuple<List<Move>, DynamicCarState>(moves, newState);
+		return new Tuple<List<Move>, DynamicCarState> (moves, newState);
 
 	}
 
-	/* Shortest dubin path between points on two seperate directed circles. */
-	private List<Move> getShortestMovesBetween (Vector3 initial, Vector3 veli, Vector3 final, Vector3 velf, Vector3 rci, Vector3 rcf){
-		Vector3 center1 = initial + rci;
-		Vector3 center2 = final + rcf;
-		Vector3 di = Vector3.Cross (veli, rci);
-		Vector3 df = Vector3.Cross (velf, rcf);
-		
-		/*If the circles intersect there exist no crossing tangents*/
-		if (Vector3.Dot (di, df) < 1 && (center2-center1).magnitude < 2 * r) {
-			return new List<Move>();
-		}
-		/*Find the tangentpoints */
-		
-		Vector3[] tangentPoints = (Vector3.Dot(di, df) > 1) ? Tangents.parallelTangentPoints(center1, center2, r) 
-															: Tangents.intersectingTangentPoints(center1, center2, r);
-		
-		/* the angles and paths for the two tangents*/
-		float sa1 = Tangents.RotationAngle( -rci, tangentPoints[0] - center1);
-		Vector3 straight1 = tangentPoints [1] - tangentPoints [0];
-		float s1 = (straight1).magnitude;
-		float ea1 = Tangents.RotationAngle ( tangentPoints [1] - center2, -rcf);
-		float l1 = Mathf.Abs(sa1) + s1 + Mathf.Abs(ea1);
-		
-		float sa2 = Tangents.RotationAngle(-rci, tangentPoints[2] - center1);
-		Vector3 straight2 = tangentPoints [3] - tangentPoints [2];
-		float s2 = (straight2).magnitude;
-		float ea2 = Tangents.RotationAngle (tangentPoints [3] - center2, -rcf);
-		float l2 = Mathf.Abs(sa2) + s2 + Mathf.Abs(ea2);
-		
-		
-		/*Assign our path the shorter one*/
-		float sa, s, ea;
-		Vector3 straight;
-		if (l1 < l2) {
-			sa = sa1; s = s1; ea = ea1; straight = straight1;
-		} else {
-			sa = sa2; s = s2; ea = ea2;  straight = straight2;
-		}
-		
-		List<Move> moves = new List<Move>();
-
-
-		float dsa = Mathf.Sign(sa) * Mathf.Sign(di.y);
-		Vector3 orient = Quaternion.Euler(0, sa, 0) * veli.normalized;
-		float ds = ((Vector3.Angle (orient, straight) < 90) ? 1 : -1);
-		float dea = Mathf.Sign(ea) * Mathf.Sign(df.y);
-
-		//float totalDist = s + sa * toRad * r + ea * toRad * r;
-		/*
-		 * Move(Vector3 velocity, float speed, float absAcc, float theta, float t)
-		 */
-		float accDist;
-		float accTime;
-		float v = speed;
-		if (dsa + ds == 0) {
-			accDist = accelerationDistance(v, maxAcc, sa * toRad * r);
-			accTime = accelerationTime(v, accDist);        	// two solutions
-			// float accTime = (-speed - Mathf.Sqrt(speed*speed +2 * maxAcc * accDist)) / maxAcc;		// two solutions
-			moves.Add ( new DynamicCarMove( orientation, v, maxAcc, w * toDeg * Mathf.Sign(di.y), accTime ) );
-
-
-			//orientation
-			v = v + accTime*maxAcc;
-			accTime = v / maxAcc;
-			moves.Add ( new DynamicCarMove( orientation, v, -maxAcc, w * toDeg * Mathf.Sign(di.y), accTime ) );
-			v = v - accTime*maxAcc;
-
-		} else {
-			accDist = sa * toRad * r;
-			accTime = accelerationTime(v, accDist); 
-			moves.Add ( new DynamicCarMove( orientation, v, maxAcc, w * toDeg * Mathf.Sign(di.y), accTime ) );
-			v = v + accTime*maxAcc;
-		}
-
-		if (ds + dea == 0) {
-			accDist = accelerationDistance(v, maxAcc, s);
-			accTime = accelerationTime(v, accDist);         	// two solutions
-			// float accTime = (-speed - Mathf.Sqrt(speed*speed +2 * maxAcc * accDist)) / maxAcc;		// two solutions
-			moves.Add (new DynamicCarMove (orientation, v, maxAcc, 0, accTime));
-
-			v = v + accTime * maxAcc;
-			accTime = v / maxAcc;
-			moves.Add (new DynamicCarMove (orientation, v, -maxAcc, 0, accTime));
-			v = v - accTime*maxAcc;
-		} else {
-			accDist = s;
-			accTime = accelerationTime(v, accDist); 
-			moves.Add ( new DynamicCarMove( orientation, v, maxAcc, 0, accTime ) );
-			v = v + accTime*maxAcc;
-		}
-
-		//accDist = accelerationDistance(v, maxAcc, ea * toRad * r );
-		if (velf.magnitude > v) {
-
-			accTime = Mathf.Abs(velf.magnitude - v ) / maxAcc;
-			moves.Add (new DynamicCarMove (orientation, v, maxAcc, w * toDeg * Mathf.Sign(df.y), accTime));
-
-			v = v + accTime*maxAcc;
-			moves.Add (new DynamicCarMove (orientation, v, 0, w * toDeg * Mathf.Sign(df.y), accTime));
-
-		} else {
-			accTime = (( v - velf.magnitude ) / maxAcc);
-			moves.Add (new DynamicCarMove (orientation, v, -maxAcc, w * toDeg * Mathf.Sign(df.y), accTime));
-
-			v = v + accTime*maxAcc;
-			moves.Add (new DynamicCarMove (orientation, v, 0, w * toDeg * Mathf.Sign(df.y), accTime));
-		}
-
-
-		accDist = velf.sqrMagnitude - v * v;
-
-		accTime = accelerationTime(v, accDist);        	// two solutions
-		
-		return moves;
-	}
+	//public Tuple<List<Move>, DynamicCarState> MovesToGoal(DynamicCarState other) {
 
 	private float accelerationDistance(float v0, float a, float l) {
 		//return l - 0.5f * (v1 * v1 - v0 * v0) / a; 
@@ -239,6 +143,7 @@ public class DynamicCarState : IVehicleState<DynamicCarState> {
 		return (-v0 + Mathf.Sqrt (v0 * v0 + 2 * maxAcc * accDist)) / maxAcc; 
 	}
 
+
 	// Generates new random kinematic point state
 	public static DynamicCarState GenerateRandom() {
 		float x = Random.Range(lo, hi);
@@ -247,11 +152,7 @@ public class DynamicCarState : IVehicleState<DynamicCarState> {
 		Vector3 dir = Random.onUnitSphere;
 		Vector2 vec2Dir = new Vector2(dir.x, dir.z).normalized;
 		Vector3 orientation = new Vector3(vec2Dir.x, 0, vec2Dir.y);
-		float speed = Random.Range(0, 10);
+		float speed = Random.Range(0, 20);
 		return new DynamicCarState(x, y, orientation, speed);
-	}
-
-	override public string ToString() {
-		return string.Format("{0} {1} {2} {3}", x, y, speed, orientation);
 	}
 }

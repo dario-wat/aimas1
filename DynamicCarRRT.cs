@@ -4,10 +4,11 @@ using System.Linq;
 
 public class DynamicCarRRT : AbstractVehicle {
 
-	// Kinematic car parameters
+	// Dynamic car parameters
 	public float maxAcc;
 	public float maxPhi;
 	public float L;
+	public float time;
 
 	// VState of start and goal
 	private DynamicCarState startState;
@@ -41,8 +42,8 @@ public class DynamicCarRRT : AbstractVehicle {
 		DynamicCarState.r = L / Mathf.Tan(maxPhi * Mathf.PI / 180);
 		DynamicCarState.lo = lowLimitRRT;
 		DynamicCarState.hi = highLimitRRT;
-		DynamicCarState.timeStep = 0.2f;
-		
+		DynamicCarState.timeStep = time;
+
 		// Set scale and rotate to right
 		transform.localScale = new Vector3(1, 1, L);
 		transform.rotation = Quaternion.Euler(0, 90, 0);
@@ -61,24 +62,32 @@ public class DynamicCarRRT : AbstractVehicle {
 			neighborhood
 		);
 
-		// Set moves and other data needed for base
-		moves = new Stack<Move>(Enumerable.Reverse(rrt.moves));
-		cost = rrt.cost;
-		rrtTime = rrt.runTime;
+		// Remove the last move in the list and replace it with breaking
+		DynamicCarMove last =
+			rrt.moves[rrt.moves.Count-1] as DynamicCarMove;
+		Vector3 lastVel = last.velocity;
+		float lastTime = last.speed / maxAcc;
+		Move lastMove = new DynamicPointMove(lastVel * last.speed,
+			-lastVel.normalized * maxAcc, lastTime);
+		moves = new Stack<Move>(
+			Enumerable.Concat(
+				new Move[] {lastMove},
+				Enumerable.Reverse(rrt.moves).Skip(1)
+			)
+		);
 
-/*		transform.position = new Vector3(10, 0, 10);
-		moves = new Stack<Move>(new Move[] {
-			new DynamicCarMove(Vector3.right, 5, -1, -1, 30)
-		});
-*/
+		// Set moves and other data needed for base
+		cost = rrt.cost + lastTime - last.t;
+		rrtTime = rrt.runTime;
+		Debug.Log("Time: " + cost + "  RRT: " + rrtTime);
+
 		// This part generates points for realistic path
 		GameObject tmp = new GameObject();
 		Transform tr = tmp.transform;
 		tr.position = transform.position;
 		tr.rotation = transform.rotation;
-		//List<Move> tmpMoves = new List<Move>();
-		/*foreach (Move m in rrt.moves) {
-			print(m);
+		List<Move> tmpMoves = new List<Move>();
+		foreach (Move m in rrt.moves) {
 			tmpMoves.Add(m.Copy());
 		}
 		foreach (Move m in tmpMoves) {
@@ -87,7 +96,6 @@ public class DynamicCarRRT : AbstractVehicle {
 				poss.Add(tr.position);
 			}
 		}
-		*/
 		Destroy(tmp);
 	}
 

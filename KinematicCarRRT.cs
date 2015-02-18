@@ -79,9 +79,10 @@ public class KinematicCarRRT : AbstractVehicle {
 		foreach (Move m in rrt.moves) {
 			tmpMoves.Add(m.Copy());
 		}
+		float step = 1 / maxVel;
 		foreach (Move m in tmpMoves) {
 			while (m.t > 0) {
-				m.MoveMe(tr, 0.1f);
+				m.MoveMe(tr, step);
 				poss.Add(tr.position);
 			}
 		}

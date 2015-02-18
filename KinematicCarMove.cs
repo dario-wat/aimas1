@@ -4,10 +4,10 @@ using System.Collections.Generic;
 public class KinematicCarMove : Move {
 
 	// Angular velocity
-	private float omega;
+	public float omega { get; private set; }
 
 	// Normalized velocity, direction of moving
-	private Vector3 velocity;
+	public Vector3 velocity { get; private set; }
 
 	// Speed, can be negative when moving backwards
 	private float speed;
@@ -57,10 +57,16 @@ public class KinematicCarMove : Move {
 		Vector2 sp = new Vector2(startPos.x, startPos.z);
 		Vector2 np = new Vector2(newPoint.x, newPoint.z);
 
+		// Length of the car
+		float L = KinematicCarState.L;
+
 		if (omega == 0.0f) {		// Check straight line intersection
-			Edge e = new Edge(sp, np);
+			Vector2 transVec = (np - sp).normalized * L;
+			Vector2 midPoint = (sp + np) / 2;
+			// TODO midPoint not necessary if you fix arc
+			Edge e = new Edge(sp, np + transVec);		// TODO check correctness
 			foreach (Polygon p in polys) {
-				if (p.Intersects(e)) {
+				if (p.Intersects(e) || p.IsInside(midPoint)) {
 					return true;
 				}
 			}
@@ -80,16 +86,50 @@ public class KinematicCarMove : Move {
 				a1 = Arc.Angle(Vector2.right, cenToN);
 				a2 = Arc.Angle(Vector2.right, cenToS);
 			}
+			/*Vector2 normal = Quaternion.Euler(0, 90, 0) * (sp - np);
+			float na = (a1 + a2) / 2;
+			Vector2 aaa2 = cp + normal * r;
+			Vector2 aaa3 = cp - normal * r;
+			float aaaa2 = Arc.Angle(Vector2.right, aaa2);
+			float aaaa3 = Arc.Angle(Vector2.right, aaa3);
+			Vector2 ffff = aaa2;
+			if (a1 < a2) {
+				if (aaaa2 > a1 && aaaa2 < a2) {
+					ffff = aaa2;
+				}
+				if (aaaa3 > a1 && aaaa3 < a2) {
+					ffff = aaa3;
+				}
+			} else {
+				if (aaaa2 > a1 && aaaa2 < a2 && aaaa2 < 360 && aaaa2 > 0) {
+					ffff = aaa2;
+				}
+				if (aaaa3 > a1 && aaaa3 < a2 && aaaa3 < 360 && aaaa3 > 0) {
+					ffff = aaa3;
+				}
+			}*/
+			// Checking the front of the vehicle
+			Vector3 transVec = velocity.normalized * L;
+			Vector3 cenToFront = -centerOff + transVec;
+			float frontR = cenToFront.magnitude;
+			float diffAngle = Tangents.RotationAngle(-centerOff, cenToFront);
 			
 			// Check if arc intersects with any of the polygons
 			Arc arc = new Arc(cp, r, a1, a2);
+			// TODO check correctness, if it is - or + diffAngle
+			Arc frontArc = new Arc(cp, frontR, a1 - diffAngle, a2 - diffAngle);
 			foreach (Polygon p in polys) {
-				if (p.Intersects(arc)) {
+				if (p.Intersects(arc) || p.Intersects(frontArc)) {
 					return true;
 				}
 			}
 		}
 		return false;
+	}
+
+	public bool Obstructed2(
+		IEnumerable<Polygon> polys, Vector3 startPos) {
+		return Obstructed(polys, startPos);
 	}
 
 	// Predict the point, depends if its arc or line
@@ -116,4 +156,5 @@ public class KinematicCarMove : Move {
 			"Velocity: {0}, Speed: {1}, Omega: {2}, t: {3}, Left: {4}, r: {5}",
 			velocity, speed, Mathf.Sign(speed) * omega, t, omega < 0, r);
 	}
+
 }
