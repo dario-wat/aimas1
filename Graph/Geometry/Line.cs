@@ -6,9 +6,9 @@ using System;
 public class Line {
 
 	// line parameters as in ax + by + c = 0
-	private float a;
-	private float b;
-	private float c;
+	public readonly float a;
+	public readonly float b;
+	public readonly float c;
 
 	// Constructs line from 2 points
 	public Line(Vector2 v, Vector2 w) {
@@ -31,7 +31,7 @@ public class Line {
 	// Returns null if matrix is singular (liner are parallel)
 	public Vector2? Intersection(Line other) {
 		float det = Det2(this.a, this.b, other.a, other.b);
-		if (Math.Abs(det) < 10e-8f) {	// Singular matrix, no intersection
+		if (Mathf.Abs(det) < 0.0001) {	// Singular matrix, no intersection
 			return null;
 		}
 

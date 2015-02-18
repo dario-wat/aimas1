@@ -38,6 +38,26 @@ public class Polygon {
 		return vertices.Contains(v);
 	}
 
+	// Check if the polygon intersects with arc
+	public bool Intersects(Arc arc) {
+		foreach (Edge e in edges) {
+			if (arc.Intersects(e)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	// Checks if the edge intersects with the polygon
+	public bool Intersects(Edge line) {
+		foreach (Edge e in edges) {
+			if (e.Intersect(line)) {
+				return true;
+			}
+		}
+		return false;
+	}
+
 	// Check if point is inside polygon
 	// Using RayCaster algorithm
 	public bool IsInside(Vector2 p) {

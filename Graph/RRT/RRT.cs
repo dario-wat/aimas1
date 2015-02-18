@@ -92,14 +92,16 @@ public class RRT<VState> where VState : class, IVehicleState<VState> {
 		vertices.Add(initial.vec3);
 		
 		// Iterative exploring
+		int uz=0;
 		for (int i = 0; i <= K; i++) {
-
+			uz++;
+			//if (uz > 100) break;
+			//Debug.Log(i);
 			// Generate random state
 			VState randomState = generate();
 			if (i >= K) {		// In last step try to reach goal
 				randomState = goal;
 			}
-			Debug.Log(randomState);
 
 
 			bool goout = false;
@@ -143,16 +145,15 @@ public class RRT<VState> where VState : class, IVehicleState<VState> {
 					moves = tMoves;
 				}
 			}
-
+			//Debug.Log(i + " >= " + K);
+			//Debug.Log(nearest);
 			if (nearest == null) {
 				if (i >= K) {
-					return;
+					break;
 				}
 				i--;		// It is obstructed, generate new point
 				continue;
 			}
-			//moves = nearest.state.MovesTo(randomState);
-
 			
 
 			// Aggregate cost
@@ -171,16 +172,24 @@ public class RRT<VState> where VState : class, IVehicleState<VState> {
 			vertices.Add(newState.vec3);
 			nodes.Add(new Node(newState, nearest, moves._1,
 				nearest.cost + moveCost));
+		}
 
-			// TODO implement near		
-			if (newState.Equals(goal) || i >= K) {
-				this.goalNode = nodes[nodes.Count-1];
-				this.edges = edges.AsReadOnly();
-				this.vertices = vertices.AsReadOnly();
-				Trace();
-				return;
+		// End, goal is last position
+		/*float minD = float.MaxValue;
+		Node best = null;
+		foreach (Node n in nodes) {
+			float d = n.state.Distance(goal);
+			if (d < minD) {
+				minD = d;
+				best = n;
 			}
 		}
+		Debug.Log(best + " " + minD);
+		*/
+		this.goalNode = nodes[nodes.Count-1];
+		this.edges = edges.AsReadOnly();
+		this.vertices = vertices.AsReadOnly();
+		Trace();
 	}
 
 	// Traces path back from the goal to the root

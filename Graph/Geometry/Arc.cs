@@ -56,12 +56,21 @@ public class Arc {
 			// Number crunching
 			// It looks ugly as hell but it needs to have as few operations
 			// as possible to make it run as fast as possible
+			
+			/*
 			float lbSqr = l.b * l.b;
 			float a = l.a * l.a + lbSqr;
 			float b = 2 * (-lbSqr * center.x + l.a * l.c + l.a * l.b * center.y);
 			float c = center.x * center.x * lbSqr + l.c * l.c
 				+ center.y * center.y * lbSqr + 2 * l.c * center.y * l.b
 				- r * r * lbSqr;
+			*/
+			
+			float g = - l.a / l.b;
+			float c = - l.c / l.b;
+			float a = g*g + 1;
+			float b = 2 * ( g*(c - center.y) - center.x );
+			c = (center.y - c)*(center.y - c) - r*r + center.x*center.x;
 
 			// Discriminant of quadratic equation
 			float d = b * b - 4 * a * c;

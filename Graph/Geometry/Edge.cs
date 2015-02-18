@@ -6,14 +6,15 @@ using System;
 	Class describes edges or in other words line segments. Includes
 	methods which are used for graph construction.
 */
-public class Edge {
+public class Edge : IGizmosDrawable {
 
 	// Const to ensure that the algorithms finds proper intersections
-	private const float e = 0.0001f;
+	private const float eps = 0.0001f;
 
 	// Two vertices that define the edge
 	public Vector2 v { get; private set; }
 	public Vector2 w { get; private set; }
+
 
 	// Constructor
 	public Edge(Vector2 v, Vector2 w) {
@@ -49,11 +50,27 @@ public class Edge {
 		Vector2 v2 = other.v;
 		Vector2 w2 = other.w;
 
+		float pxPe = p.x + eps;
+		float pxMe = p.x - eps;
+		float pyPe = p.y + eps;
+		float pyMe = p.y - eps;
+
 		// Complicated last return
-		return 	p.x+e >= Math.Min(v1.x, w1.x) && p.x-e <= Math.Max(v1.x, w1.x)
-			&&	p.x+e >= Math.Min(v2.x, w2.x) && p.x-e <= Math.Max(v2.x, w2.x)
-			&&	p.y+e >= Math.Min(v1.y, w1.y) && p.y-e <= Math.Max(v1.y, w1.y)
-			&&	p.y+e >= Math.Min(v2.y, w2.y) && p.y-e <= Math.Max(v2.y, w2.y);
+		return 	pxPe >= Mathf.Min(v1.x, w1.x) && pxMe <= Mathf.Max(v1.x, w1.x)
+			&&	pxPe >= Mathf.Min(v2.x, w2.x) && pxMe <= Mathf.Max(v2.x, w2.x)
+			&&	pyPe >= Mathf.Min(v1.y, w1.y) && pyMe <= Mathf.Max(v1.y, w1.y)
+			&&	pyPe >= Mathf.Min(v2.y, w2.y) && pyMe <= Mathf.Max(v2.y, w2.y);
+	}
+
+	// Draws the edge using Gizmos
+	public void GizmosDraw(Color color) {
+		Color tmp = Gizmos.color;
+		Gizmos.color = color;
+		Gizmos.DrawLine(
+			new Vector3(v.x, 0.0f, v.y),
+			new Vector3(w.x, 0.0f, w.y)
+		);
+		Gizmos.color = tmp;
 	}
 
 	// Two edges are equal if they have equal vertices
